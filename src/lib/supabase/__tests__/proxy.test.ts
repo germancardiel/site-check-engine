@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -32,7 +34,7 @@ const { createServerClient, getUser } = vi.hoisted(() => {
 
 vi.mock('@supabase/ssr', () => ({ createServerClient }))
 
-import { getAuthRedirect, updateSession } from '@/lib/supabase/proxy'
+import { PRIVATE_PREFIXES, getAuthRedirect, updateSession } from '@/lib/supabase/proxy'
 
 function request(path: string, cookie?: string): NextRequest {
   const headers = cookie ? { cookie } : undefined
@@ -66,9 +68,10 @@ describe('getAuthRedirect', () => {
     }
   })
 
-  it('no abre rutas que solo empiezan como un archivo público', () => {
-    expect(getAuthRedirect('/llms.txt-privado', false)).toBe('/login')
-    expect(getAuthRedirect('/opengraph-images', false)).toBe('/login')
+  it('no trata como privadas rutas que solo comparten prefijo con una privada o un archivo público', () => {
+    expect(getAuthRedirect('/sitiosx', false)).toBeNull()
+    expect(getAuthRedirect('/llms.txt-privado', false)).toBeNull()
+    expect(getAuthRedirect('/opengraph-images', false)).toBeNull()
   })
 
   it('deja ver /login y /registro sin sesión', () => {
@@ -81,8 +84,46 @@ describe('getAuthRedirect', () => {
     expect(getAuthRedirect('/', true)).toBeNull()
   })
 
-  it('no confunde rutas que solo comparten prefijo', () => {
-    expect(getAuthRedirect('/loginx', false)).toBe('/login')
+  it('no confunde rutas que solo comparten prefijo con /login', () => {
+    expect(getAuthRedirect('/loginx', false)).toBeNull()
+    expect(getAuthRedirect('/loginx', true)).toBeNull()
+  })
+
+  it('deja llegar a Next (404) cualquier ruta desconocida, con o sin sesión', () => {
+    for (const path of ['/no-existe-xyz', '/admin', '/api/secreto', '/a/b/c']) {
+      expect(getAuthRedirect(path, false)).toBeNull()
+      expect(getAuthRedirect(path, true)).toBeNull()
+    }
+  })
+
+  it('protege todo lo que cuelga de un prefijo privado, a cualquier profundidad', () => {
+    for (const path of ['/sitios/', '/sitios/abc/auditorias/def', '/sitios/abc?x=1']) {
+      expect(getAuthRedirect(path, false)).toBe('/login')
+    }
+  })
+
+  it('no deja esquivar la protección con mayúsculas, escapes ni barras duplicadas', () => {
+    for (const path of ['/SITIOS', '/Sitios/abc', '/%73itios', '/sitios%2Fabc', '//sitios', '/sitios//abc']) {
+      expect(getAuthRedirect(path, false)).toBe('/login')
+    }
+  })
+
+  it('no falla con escapes mal formados', () => {
+    expect(getAuthRedirect('/%E0%A4%A', false)).toBeNull()
+    expect(getAuthRedirect('/sitios/%E0%A4%A', false)).toBe('/login')
+  })
+})
+
+describe('PRIVATE_PREFIXES', () => {
+  it('incluye cada carpeta de primer nivel de src/app/(app)/ (guardián)', () => {
+    const appDir = fileURLToPath(new URL('../../../app/(app)/', import.meta.url))
+    const folders = readdirSync(appDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `/${entry.name}`)
+    expect(folders.length).toBeGreaterThan(0)
+    for (const folder of folders) {
+      expect(PRIVATE_PREFIXES, `Falta ${folder} en PRIVATE_PREFIXES`).toContain(folder)
+    }
   })
 })
 
@@ -114,6 +155,12 @@ describe('updateSession', () => {
   it('lee las cookies de la petición', async () => {
     await updateSession(request('/', 'sb-token=abc'))
     expect(state.methods?.getAll()).toEqual([{ name: 'sb-token', value: 'abc' }])
+  })
+
+  it('deja pasar sin redirigir una ruta desconocida sin sesión (Next responde 404)', async () => {
+    const response = await updateSession(request('/no-existe-xyz'))
+    expect(response.headers.get('location')).toBeNull()
+    expect(response.headers.get('x-middleware-next')).toBe('1')
   })
 
   it('redirige a /login sin sesión en /sitios', async () => {

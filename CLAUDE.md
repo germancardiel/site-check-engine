@@ -87,7 +87,7 @@ Archivos esperados, decisiones ya tomadas.
 | T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | hecho (ronda 1) |
 | T12 | Corrección: lectura de sesión durante el prerender (cabecera) | hecho (ronda 1) |
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | hecho (ronda 1) |
-| T08 | Producción, usuario demo y README | pendiente |
+| T08 | Producción, usuario demo y README | hecho (ronda 1) |
 
 Actualiza el estado (`pendiente` → `en curso` → `hecho (ronda N)`) al cerrar cada tarea.
 

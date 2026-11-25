@@ -24,6 +24,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-QA-05 | m | Sin código muerto, comentado o `TODO` sin ID de tarea | `grep -rn "TODO" src` → solo `TODO(TXX)` |
 | D-QA-06 | M | Server Components por defecto; `"use client"` solo si hay estado, efectos o eventos | Cada `"use client"` usa hooks o handlers |
 | D-QA-08 | B | Con `cacheComponents`, ningún Server Component lee valores no deterministas (`new Date()`, `Date.now()`, `Math.random()`, `crypto.randomUUID()`) sin llamar antes a `await connection()` (de `next/server`) dentro de un `<Suspense>`; o el valor se calcula en cliente. Las funciones de `src/lib` no usan la hora actual como valor por defecto: la reciben como parámetro. Leer la sesión de Supabase (`createClient()` de servidor + `auth.getUser()`) cuenta como valor no determinista, porque `auth-js` usa `Date.now()` internamente; la protección está centralizada en `createClient()` de `src/lib/supabase/server.ts` (`await connection()` antes de `cookies()`). Por eso `createClient()` de servidor no se usa dentro de `"use cache"`, `"use cache: private"`, `unstable_cache` ni `after()` | `grep -rnE "= new Date\(\)" src/lib` → vacío (fuera de tests); `grep -rnE "new Date\(\)\|Date\.now\(\)\|Math\.random\(\)\|randomUUID\(\)" src/app src/components` → cada uso en Server Component va precedido de `await connection()` en el mismo componente; `npm test` pasa `src/__tests__/no-unstable-values.test.ts` (guardián de `server.ts`); `grep -rnE "use cache|unstable_cache|after\(" src` → ningún uso junto a `createClient()` |
+| D-QA-09 | B | Nada fuera de `src/__smoke__/` importa de `src/__smoke__/` (sus utilidades rebajan D-SEC-05 para auditar loopback en local) | `grep -rnE "__smoke__" src --include=*.ts --include=*.tsx` → solo dentro de `src/__smoke__/` |
 | D-QA-07 | M | Sin dependencias nuevas fuera del stack de `CLAUDE.md` §2 sin justificar en el informe. Las que trae el scaffold de `create-next-app` (T01) no necesitan justificación | Diff de `package.json` frente al informe |
 
 ## 2. Tests (TEST)
@@ -32,7 +33,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-TEST-01 | B | Toda lógica nueva en `src/lib/` tiene tests en `__tests__/` junto a ella. Exentos: archivos que solo declaran tipos | Cada `.ts` nuevo de `lib/` con lógica tiene su `.test.ts`, o lo cubre un test del módulo (p. ej. `checks.test.ts` para `checks/*.ts`) con 100 % de líneas de ese archivo |
 | D-TEST-02 | M | Cobertura de líneas de `src/lib/audit/**` de 80 % o más | `npm run test:coverage` |
 | D-TEST-03 | M | Cada check de auditoría tiene al menos un test `pass` y uno `fail` con HTML de fixture | Lectura de `checks.test.ts` |
-| D-TEST-04 | B | Los tests NO hacen peticiones de red reales: el DNS y el transporte se inyectan (`mockTransport` de `src/lib/audit/__tests__/fixtures/helpers.ts`, o mock de `@/lib/audit`); `vi.stubGlobal('fetch')` no aísla el motor. Se permite un servidor local efímero en `127.0.0.1` levantado por el propio test, con resolución simulada | Tests pasan sin red; `grep -rn "https://" src/**/__tests__` solo en fixtures |
+| D-TEST-04 | B | Los tests NO hacen peticiones de red reales: el DNS y el transporte se inyectan (`mockTransport` de `src/lib/audit/__tests__/fixtures/helpers.ts`, o mock de `@/lib/audit`); `vi.stubGlobal('fetch')` no aísla el motor. Se permite un servidor local efímero en `127.0.0.1` levantado por el propio test, con resolución simulada. Excepción: los smoke tests de `src/__smoke__/` (configuración propia, `npm run test:smoke`) sí usan la red y nunca forman parte de `npm test` | Tests pasan sin red; `grep -rn "https://" src/**/__tests__` solo en fixtures |
 | D-TEST-05 | M | Cada criterio de aceptación de la tarea tiene un test o un paso manual documentado en el informe | Cruce CA ↔ tests |
 
 ## 3. Seguridad (SEC)
@@ -97,4 +98,5 @@ src/lib/supabase/        clientes (server.ts, client.ts) y tipos
 src/lib/validation/      esquemas zod compartidos
 supabase/migrations/     SQL versionado
 scripts/                 seed y utilidades (único lugar con service role)
+src/__smoke__/           smoke tests contra la app desplegada (red real; fuera de `npm test`)
 ```

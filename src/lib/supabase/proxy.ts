@@ -6,24 +6,37 @@ import type { Database } from './types'
 export const LOGIN_PATH = '/login'
 export const HOME_PATH = '/sitios'
 
-/** Routes reachable without a session. Everything else (the `(app)` group) is private. */
-const PUBLIC_PATHS = ['/']
-/** Public metadata files (and anything below them, e.g. hashed image variants). */
-const PUBLIC_FILES = ['/robots.txt', '/sitemap.xml', '/llms.txt', '/opengraph-image']
+/**
+ * Private route prefixes: every top-level folder of `src/app/(app)/` must be listed here
+ * (a guard test enforces it). Without a session they redirect to `/login`; any other
+ * unknown route reaches Next and gets a real 404. Pages still check `auth.getUser()`.
+ */
+export const PRIVATE_PREFIXES = ['/sitios'] as const
 /** Auth pages: a signed-in user is sent to the app instead. */
 const AUTH_PATHS = ['/login', '/registro']
+
+/** Decoded, lower-cased path so encoded or re-cased variants cannot dodge the guard. */
+function normalizePath(pathname: string): string {
+  let decoded = pathname
+  try {
+    decoded = decodeURIComponent(pathname)
+  } catch {
+    // Malformed escapes: keep the raw path (Next answers it with 400/404 anyway).
+  }
+  return decoded.replace(/\/{2,}/g, '/').toLowerCase()
+}
 
 function matches(pathname: string, path: string): boolean {
   return pathname === path || pathname.startsWith(`${path}/`)
 }
 
 /** Decides where a request must be redirected, or `null` to let it through. */
-export function getAuthRedirect(pathname: string, isSignedIn: boolean): string | null {
+export function getAuthRedirect(rawPathname: string, isSignedIn: boolean): string | null {
+  const pathname = normalizePath(rawPathname)
   const isAuthPage = AUTH_PATHS.some((path) => matches(pathname, path))
   if (isAuthPage) return isSignedIn ? HOME_PATH : null
-  if (PUBLIC_PATHS.includes(pathname)) return null
-  if (PUBLIC_FILES.some((path) => matches(pathname, path))) return null
-  return isSignedIn ? null : LOGIN_PATH
+  const isPrivate = PRIVATE_PREFIXES.some((prefix) => matches(pathname, prefix))
+  return isPrivate && !isSignedIn ? LOGIN_PATH : null
 }
 
 /**

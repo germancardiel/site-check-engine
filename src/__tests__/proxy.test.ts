@@ -57,6 +57,12 @@ describe('proxy', () => {
     expect((await proxy(request('/'))).headers.get('location')).toBeNull()
   })
 
+  it('no redirige rutas desconocidas, con o sin sesión, para que Next devuelva 404', async () => {
+    expect((await proxy(request('/no-existe-xyz'))).headers.get('location')).toBeNull()
+    auth.user = { id: 'u1' }
+    expect((await proxy(request('/no-existe-xyz'))).headers.get('location')).toBeNull()
+  })
+
   it('excluye los recursos estáticos del matcher', () => {
     const [pattern] = config.matcher
     const regex = new RegExp(`^${pattern}$`)
