@@ -23,12 +23,12 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-QA-04 | m | Funciones de 60 líneas o menos y archivos de 300 líneas o menos | Revisión de los archivos tocados |
 | D-QA-05 | m | Sin código muerto, comentado o `TODO` sin ID de tarea | `grep -rn "TODO" src` → solo `TODO(TXX)` |
 | D-QA-06 | M | Server Components por defecto; `"use client"` solo si hay estado, efectos o eventos | Cada `"use client"` usa hooks o handlers |
-| D-QA-07 | M | Sin dependencias nuevas fuera del stack de `CLAUDE.md` §2 sin justificar en el informe | Diff de `package.json` frente al informe |
+| D-QA-07 | M | Sin dependencias nuevas fuera del stack de `CLAUDE.md` §2 sin justificar en el informe. Las que trae el scaffold de `create-next-app` (T01) no necesitan justificación | Diff de `package.json` frente al informe |
 
 ## 2. Tests (TEST)
 | ID | Sev | Requisito | Verificación |
 |---|---|---|---|
-| D-TEST-01 | B | Toda lógica nueva en `src/lib/` tiene tests en `__tests__/` junto a ella | Cada `.ts` nuevo de `lib/` tiene su `.test.ts` |
+| D-TEST-01 | B | Toda lógica nueva en `src/lib/` tiene tests en `__tests__/` junto a ella. Exentos: archivos que solo declaran tipos | Cada `.ts` nuevo de `lib/` con lógica tiene su `.test.ts` |
 | D-TEST-02 | M | Cobertura de líneas de `src/lib/audit/**` de 80 % o más | `npm run test:coverage` |
 | D-TEST-03 | M | Cada check de auditoría tiene al menos un test `pass` y uno `fail` con HTML de fixture | Lectura de `checks.test.ts` |
 | D-TEST-04 | B | Los tests NO hacen peticiones de red reales (se usan mocks de `fetch`/DNS) | Tests pasan sin red; `grep -rn "https://" src/**/__tests__` solo en fixtures |
@@ -37,7 +37,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 ## 3. Seguridad (SEC)
 | ID | Sev | Requisito | Verificación |
 |---|---|---|---|
-| D-SEC-01 | B | Ningún secreto en el repositorio. `.env*` está ignorado, salvo `.env.example` (sin valores) | `git ls-files \| grep -E "^\.env"` → solo `.env.example`; `grep -rnE "(sk-\|eyJhbGci\|service_role)" --exclude-dir=node_modules .` → vacío |
+| D-SEC-01 | B | Ningún secreto en el repositorio. `.env*` está ignorado, salvo `.env.example` (sin valores) | `git ls-files \| grep -E "^\.env"` → solo `.env.example`; `grep -rnE "(sk-\|eyJhbGci\|service_role)" --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=coverage --exclude-dir=.git --exclude=DIRECTRICES.md --exclude=package-lock.json --exclude=.env.local .` → vacío |
 | D-SEC-02 | B | Todas las tablas tienen RLS activado y políticas `user_id = auth.uid()` | Lectura de `supabase/migrations/*.sql` |
 | D-SEC-03 | B | `SUPABASE_SERVICE_ROLE_KEY` nunca se importa desde código cliente ni de usuario; solo en `scripts/` | `grep -rn SERVICE_ROLE src` → vacío |
 | D-SEC-04 | B | Todo input de server actions y route handlers se valida con zod antes de usarse | Cada action/route llama `.safeParse` o `.parse` al inicio |

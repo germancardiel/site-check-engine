@@ -76,7 +76,7 @@ Archivos esperados, decisiones ya tomadas.
 ## 7. Backlog
 | ID | Tarea | Estado |
 |---|---|---|
-| T01 | Scaffold Next.js, tooling y clientes de Supabase | pendiente |
+| T01 | Scaffold Next.js, tooling y clientes de Supabase | hecho (ronda 1) |
 | T02 | Esquema de BD, RLS y autenticación | pendiente |
 | T03 | Motor de auditoría (`src/lib/audit`) | pendiente |
 | T04 | Sitios: crear, listar, borrar y ejecutar auditorías | pendiente |
