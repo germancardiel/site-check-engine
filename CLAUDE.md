@@ -79,10 +79,11 @@ Archivos esperados, decisiones ya tomadas.
 | T01 | Scaffold Next.js, tooling y clientes de Supabase | hecho (ronda 1) |
 | T02 | Esquema de BD, RLS y autenticación | hecho (ronda 1) |
 | T03 | Motor de auditoría (`src/lib/audit`) | hecho (ronda 1) |
-| T04 | Sitios: crear, listar, borrar y ejecutar auditorías | pendiente |
+| T04 | Sitios: crear, listar, borrar y ejecutar auditorías | hecho (ronda 1) |
 | T05 | Detalle de auditoría, historial y comparación | pendiente |
 | T06 | Plan de acción y resumen de cambios con IA, con límites diarios | pendiente |
 | T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | pendiente |
+| T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | pendiente |
 | T08 | Producción, usuario demo y README | pendiente |
 
 Actualiza el estado (`pendiente` → `en curso` → `hecho (ronda N)`) al cerrar cada tarea.
