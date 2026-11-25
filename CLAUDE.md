@@ -78,7 +78,7 @@ Archivos esperados, decisiones ya tomadas.
 |---|---|---|
 | T01 | Scaffold Next.js, tooling y clientes de Supabase | hecho (ronda 1) |
 | T02 | Esquema de BD, RLS y autenticación | hecho (ronda 1) |
-| T03 | Motor de auditoría (`src/lib/audit`) | pendiente |
+| T03 | Motor de auditoría (`src/lib/audit`) | hecho (ronda 1) |
 | T04 | Sitios: crear, listar, borrar y ejecutar auditorías | pendiente |
 | T05 | Detalle de auditoría, historial y comparación | pendiente |
 | T06 | Plan de acción y resumen de cambios con IA, con límites diarios | pendiente |

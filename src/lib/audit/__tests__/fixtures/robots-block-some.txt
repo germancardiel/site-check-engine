@@ -1,0 +1,6 @@
+User-agent: GPTBot
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: *
+Disallow: /admin

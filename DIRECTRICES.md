@@ -28,7 +28,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 ## 2. Tests (TEST)
 | ID | Sev | Requisito | Verificación |
 |---|---|---|---|
-| D-TEST-01 | B | Toda lógica nueva en `src/lib/` tiene tests en `__tests__/` junto a ella. Exentos: archivos que solo declaran tipos | Cada `.ts` nuevo de `lib/` con lógica tiene su `.test.ts` |
+| D-TEST-01 | B | Toda lógica nueva en `src/lib/` tiene tests en `__tests__/` junto a ella. Exentos: archivos que solo declaran tipos | Cada `.ts` nuevo de `lib/` con lógica tiene su `.test.ts`, o lo cubre un test del módulo (p. ej. `checks.test.ts` para `checks/*.ts`) con 100 % de líneas de ese archivo |
 | D-TEST-02 | M | Cobertura de líneas de `src/lib/audit/**` de 80 % o más | `npm run test:coverage` |
 | D-TEST-03 | M | Cada check de auditoría tiene al menos un test `pass` y uno `fail` con HTML de fixture | Lectura de `checks.test.ts` |
 | D-TEST-04 | B | Los tests NO hacen peticiones de red reales (se usan mocks de `fetch`/DNS) | Tests pasan sin red; `grep -rn "https://" src/**/__tests__` solo en fixtures |

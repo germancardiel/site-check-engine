@@ -1,0 +1,3 @@
+# Faro
+
+> Auditorías SEO y de visibilidad para IA.
