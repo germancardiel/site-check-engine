@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { buttonClass } from '@/components/ui/button-styles'
 import { checkAnchorId, reportToMarkdown } from '@/lib/audit/present'
+import { downloadTextFile } from '@/lib/download'
 import type { AuditReport, CategoryId, CategoryResult } from '@/lib/audit/types'
 import { formatAbsoluteDate, formatRelativeTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -21,18 +22,13 @@ export type ReportViewProps = {
 }
 
 function downloadMarkdown(report: AuditReport) {
-  const blob = new Blob([reportToMarkdown(report)], { type: 'text/markdown;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
   let host = 'sitio'
   try {
     host = new URL(report.finalUrl).hostname
   } catch {
     /* fallback */
   }
-  a.download = `auditoria-seo-${host}.md`
-  a.click()
-  URL.revokeObjectURL(a.href)
+  downloadTextFile(reportToMarkdown(report), `auditoria-seo-${host}.md`)
 }
 
 function ReportAlerts({

@@ -90,7 +90,7 @@ Archivos esperados, decisiones ya tomadas.
 | T08 | Producción, usuario demo y README | hecho (ronda 1) |
 | T13 | Rediseño (lenguaje de gcastudio.dev) y cambio de nombre a Site Check Engine | hecho (ronda 2) |
 | T14 | Auditoría de 10 apartados con bibliografía, evidencias y vista estilo GCA Studio | hecho (ronda 2) |
-| T15 | Descargar el Plan de acción en Markdown | pendiente |
+| T15 | Descargar el Plan de acción en Markdown | hecho (ronda 1) |
 
 Actualiza el estado (`pendiente` → `en curso` → `hecho (ronda N)`) al cerrar cada tarea.
 

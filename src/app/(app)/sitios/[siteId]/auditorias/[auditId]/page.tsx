@@ -224,6 +224,8 @@ async function OkAuditBody({ supabase, userId, siteUrl, displayName, audit, comp
         auditId={audit.id}
         report={ai.reports.plan}
         checks={checks.checks}
+        siteUrl={siteUrl}
+        score={report.score}
         remaining={ai.remaining}
         loadError={ai.loadError}
       />

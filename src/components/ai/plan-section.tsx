@@ -4,6 +4,7 @@ import type { ActionPlan as ActionPlanData } from '@/lib/ai/schemas'
 import { formatAbsoluteDate } from '@/lib/format'
 import { ActionPlan } from './action-plan'
 import { AiNotice } from './ai-notice'
+import { DownloadPlanButton } from './download-plan-button'
 import { GenerateReportForm } from './generate-report-form'
 
 /** Daily quota sentence in the UI font, with only the figure in mono. */
@@ -28,13 +29,17 @@ type PlanSectionProps = {
   auditId: string
   report: StoredReport<ActionPlanData>
   checks: CheckResult[]
+  /** URL of the audited site and global score of the audit, for the downloadable Markdown. */
+  siteUrl: string
+  score: number | null
   /** Generations left today; `null` when the counter could not be read. */
   remaining: number | null
   loadError: boolean
 }
 
 /** "Plan de acción" section of an `ok` audit: stored plan (if any) and the generate button. */
-export function PlanSection({ siteId, auditId, report, checks, remaining, loadError }: PlanSectionProps) {
+export function PlanSection(props: PlanSectionProps) {
+  const { siteId, auditId, report, checks, siteUrl, score, remaining, loadError } = props
   return (
     <section aria-labelledby="plan-title" className="flex flex-col gap-5 border-t border-line pt-10">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
@@ -54,13 +59,22 @@ export function PlanSection({ siteId, auditId, report, checks, remaining, loadEr
       ) : null}
       {report.status === 'ok' ? (
         <>
-          <p className="text-sm text-ink-muted">
-            Generado con IA el{' '}
-            <time dateTime={report.createdAt} className="font-mono text-ink">
-              {formatAbsoluteDate(report.createdAt)}
-            </time>
-            .
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-ink-muted">
+              Generado con IA el{' '}
+              <time dateTime={report.createdAt} className="font-mono text-ink">
+                {formatAbsoluteDate(report.createdAt)}
+              </time>
+              .
+            </p>
+            <DownloadPlanButton
+              plan={report.data}
+              siteUrl={siteUrl}
+              createdAt={report.createdAt}
+              score={score}
+              checks={checks.map(({ id, title }) => ({ id, title }))}
+            />
+          </div>
           <ActionPlan plan={report.data} checks={checks} />
         </>
       ) : null}
