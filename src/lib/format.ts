@@ -31,3 +31,35 @@ export function siteDisplayName(name: string | null, url: string): string {
     return url
   }
 }
+
+/** Time zone used to show absolute dates (the server renders in UTC). */
+export const APP_TIME_ZONE = 'Europe/Madrid'
+
+const absoluteFormatter = new Intl.DateTimeFormat('es', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: APP_TIME_ZONE,
+})
+
+const shortFormatter = new Intl.DateTimeFormat('es', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: APP_TIME_ZONE,
+})
+
+function toDate(date: Date | string): Date | null {
+  const target = typeof date === 'string' ? new Date(date) : date
+  return Number.isNaN(target.getTime()) ? null : target
+}
+
+/** Absolute date and time in Spanish, e.g. "25 nov 2026, 10:30". */
+export function formatAbsoluteDate(date: Date | string): string {
+  const target = toDate(date)
+  return target ? absoluteFormatter.format(target) : ''
+}
+
+/** Short day and month in Spanish, e.g. "25 nov". */
+export function formatShortDate(date: Date | string): string {
+  const target = toDate(date)
+  return target ? shortFormatter.format(target) : ''
+}

@@ -80,7 +80,7 @@ Archivos esperados, decisiones ya tomadas.
 | T02 | Esquema de BD, RLS y autenticación | hecho (ronda 1) |
 | T03 | Motor de auditoría (`src/lib/audit`) | hecho (ronda 1) |
 | T04 | Sitios: crear, listar, borrar y ejecutar auditorías | hecho (ronda 1) |
-| T05 | Detalle de auditoría, historial y comparación | pendiente |
+| T05 | Detalle de auditoría, historial y comparación | hecho (ronda 1) |
 | T06 | Plan de acción y resumen de cambios con IA, con límites diarios | pendiente |
 | T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | pendiente |
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | pendiente |

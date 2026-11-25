@@ -291,6 +291,7 @@ describe('auditSite', () => {
       },
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/sitios')
+    expect(revalidatePath).toHaveBeenCalledWith(`/sitios/${SITE_ID}`)
   })
 
   it('inserta también una auditoría fallida y devuelve su mensaje', async () => {
@@ -315,6 +316,7 @@ describe('auditSite', () => {
       },
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/sitios')
+    expect(revalidatePath).toHaveBeenCalledWith(`/sitios/${SITE_ID}`)
   })
 
   it('devuelve un error genérico y lo registra si falla el insert', async () => {

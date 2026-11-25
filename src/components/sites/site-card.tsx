@@ -1,9 +1,11 @@
+import Link from 'next/link'
 import { formatRelativeTime, siteDisplayName } from '@/lib/format'
 import type { AuditStatus } from '@/lib/supabase/types'
 import { AuditSiteForm } from './audit-site-form'
 import { DeleteSiteForm } from './delete-site-form'
 
 export type LatestAudit = {
+  id: string
   status: AuditStatus
   score: number | null
   seo_score: number | null
@@ -19,7 +21,10 @@ export type SiteWithLatestAudit = {
   latestAudit: LatestAudit | null
 }
 
-function AuditSummary({ audit, now }: { audit: LatestAudit | null; now: Date }) {
+const LINK_CLASS =
+  'rounded-sm underline underline-offset-4 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:hover:text-zinc-300 dark:focus-visible:outline-white'
+
+function AuditSummary({ audit, siteId, now }: { audit: LatestAudit | null; siteId: string; now: Date }) {
   if (!audit) return <p className="text-sm text-zinc-700 dark:text-zinc-300">Sin auditar</p>
 
   const when = (
@@ -28,11 +33,15 @@ function AuditSummary({ audit, now }: { audit: LatestAudit | null; now: Date }) 
     </time>
   )
 
+  const detailHref = `/sitios/${siteId}/auditorias/${audit.id}`
+
   if (audit.status === 'error') {
     return (
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium text-red-800 dark:text-red-300">
-          Error en la última auditoría
+          <Link href={detailHref} className={LINK_CLASS}>
+            Error en la última auditoría
+          </Link>
         </p>
         {audit.error ? <p className="text-sm text-zinc-700 dark:text-zinc-300">{audit.error}</p> : null}
         {when}
@@ -45,7 +54,11 @@ function AuditSummary({ audit, now }: { audit: LatestAudit | null; now: Date }) 
       <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <div className="flex gap-1">
           <dt className="text-zinc-700 dark:text-zinc-300">Nota</dt>
-          <dd className="font-semibold text-zinc-900 dark:text-zinc-100">{audit.score ?? '–'}/100</dd>
+          <dd className="font-semibold text-zinc-900 dark:text-zinc-100">
+            <Link href={detailHref} className={LINK_CLASS}>
+              {audit.score ?? '–'}/100<span className="sr-only"> (ver detalle de la auditoría)</span>
+            </Link>
+          </dd>
         </div>
         <div className="flex gap-1">
           <dt className="text-zinc-700 dark:text-zinc-300">SEO</dt>
@@ -68,10 +81,12 @@ export function SiteCard({ site, now }: { site: SiteWithLatestAudit; now: Date }
     <li className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex min-w-0 flex-col gap-2">
         <h3 className="text-base font-semibold break-words text-zinc-900 dark:text-zinc-100">
-          {displayName}
+          <Link href={`/sitios/${site.id}`} className={LINK_CLASS}>
+            {displayName}
+          </Link>
         </h3>
         <p className="text-sm break-all text-zinc-700 dark:text-zinc-300">{site.url}</p>
-        <AuditSummary audit={site.latestAudit} now={now} />
+        <AuditSummary audit={site.latestAudit} siteId={site.id} now={now} />
       </div>
       <div className="flex flex-wrap items-start gap-2 sm:max-w-64 sm:flex-col sm:items-stretch">
         <AuditSiteForm siteId={site.id} siteName={displayName} />

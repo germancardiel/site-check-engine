@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export const maxDuration = 60
 
 const SITE_COLUMNS = 'id, url, name, created_at'
-const AUDIT_COLUMNS = 'status, score, seo_score, ai_score, error, created_at'
+const AUDIT_COLUMNS = 'id, status, score, seo_score, ai_score, error, created_at'
 
 async function SitesContent() {
   const supabase = await createClient()

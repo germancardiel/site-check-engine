@@ -143,5 +143,6 @@ export async function auditSite(_: SiteActionState, formData: FormData): Promise
   }
 
   revalidatePath('/sitios')
+  revalidatePath(`/sitios/${site.id}`)
   return outcome.status === 'ok' ? { message: 'Auditoría completada.' } : { error: outcome.error }
 }

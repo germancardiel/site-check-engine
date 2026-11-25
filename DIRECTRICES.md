@@ -70,7 +70,7 @@ const url = formData.get('url') as string
 | D-UX-01 | M | Toda vista con datos tiene estado vacío, de carga y de error | Revisión de las páginas tocadas |
 | D-UX-02 | M | Todo input tiene `<label>` asociado; los botones solo de icono tienen `aria-label` | Lectura de JSX |
 | D-UX-03 | M | Foco visible en elementos interactivos (sin `outline-none` sin alternativa `focus-visible:`) | `grep -rn "outline-none" src` → cada uso con `focus-visible:` |
-| D-UX-04 | M | Contraste de texto de 4,5:1 o más (no hay texto de tono 400 o más claro de ninguna paleta neutra —`gray`, `zinc`, `slate`, `neutral`, `stone`— sobre fondo claro, ni de tono 600 o más oscuro sobre fondo oscuro en `dark:`) | Revisión de clases de color: `grep -rnE "text-(gray\|zinc\|slate\|neutral\|stone)-(50\|100\|200\|300\|400)\b" src` solo en contextos `dark:` |
+| D-UX-04 | M | Contraste de texto de 4,5:1 o más (no hay texto de tono 400 o más claro de ninguna paleta neutra —`gray`, `zinc`, `slate`, `neutral`, `stone`— sobre fondo claro, ni de tono 600 o más oscuro sobre fondo oscuro en `dark:`). Aplica también a `fill-*`/`stroke-*` usados para texto o datos en SVG (en trazos y marcadores de datos basta 3:1) | Revisión de clases de color: `grep -rnE "text-(gray\|zinc\|slate\|neutral\|stone)-(50\|100\|200\|300\|400)\b" src` solo en contextos `dark:` |
 | D-UX-05 | M | Responsive desde 360 px sin scroll horizontal | Revisión de layouts (`flex-wrap`, `grid` responsive, sin anchos fijos > 360 px) |
 | D-UX-06 | m | Textos de interfaz en español, sin lorem ipsum | Revisión |
 | D-UX-07 | M | Las acciones lentas (auditar, IA) deshabilitan el botón y muestran progreso | Lectura de JSX (`useFormStatus`/`pending`) |

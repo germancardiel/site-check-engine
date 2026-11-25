@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatRelativeTime, siteDisplayName } from '@/lib/format'
+import { formatAbsoluteDate, formatRelativeTime, formatShortDate, siteDisplayName } from '@/lib/format'
 
 const NOW = new Date('2026-11-25T12:00:00.000Z')
 
@@ -49,5 +49,21 @@ describe('siteDisplayName', () => {
 
   it('devuelve la URL tal cual si no se puede analizar', () => {
     expect(siteDisplayName(null, 'no es url')).toBe('no es url')
+  })
+})
+
+describe('formatAbsoluteDate y formatShortDate', () => {
+  it('formatean en español con la zona horaria de la app', () => {
+    // 23:30 UTC is already the next day in Madrid (UTC+1 in November).
+    const date = '2026-11-25T23:30:00.000Z'
+    const absolute = formatAbsoluteDate(date)
+    expect(absolute).toContain('26 nov 2026')
+    expect(absolute).toContain('0:30')
+    expect(formatShortDate(new Date(date))).toBe('26 nov')
+  })
+
+  it('devuelven cadena vacía con fechas inválidas', () => {
+    expect(formatAbsoluteDate('no es una fecha')).toBe('')
+    expect(formatShortDate('no es una fecha')).toBe('')
   })
 })
