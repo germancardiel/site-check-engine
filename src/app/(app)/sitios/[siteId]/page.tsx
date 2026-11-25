@@ -106,11 +106,11 @@ async function SiteContent({ params }: SitePageProps) {
 
 export default function SitePage({ params }: SitePageProps) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
       <BackLink href="/sitios">Volver a tus sitios</BackLink>
       <Suspense fallback={<DetailSkeleton label="Cargando el sitio…" />}>
         <SiteContent params={params} />
       </Suspense>
-    </main>
+    </div>
   )
 }

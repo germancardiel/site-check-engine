@@ -258,10 +258,10 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
 
 export default function AuditPage(props: AuditPageProps) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
       <Suspense fallback={<DetailSkeleton label="Cargando la auditoría…" />}>
         <AuditContent {...props} />
       </Suspense>
-    </main>
+    </div>
   )
 }

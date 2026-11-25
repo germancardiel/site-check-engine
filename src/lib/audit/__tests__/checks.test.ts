@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALL_CHECKS, runChecks } from '../checks'
+import { ALL_CHECKS, CHECK_CATALOG, runChecks } from '../checks'
 import {
   aiCrawlersCheck,
   entitySchemaCheck,
@@ -171,6 +171,20 @@ describe('catálogo de checks', () => {
     expect(pass.recommendation).toBe('No hace falta ninguna acción.')
     const failed = structuredDataCheck(bad())
     expect(failed.recommendation).toMatch(/JSON válido/)
+  })
+})
+
+describe('CHECK_CATALOG', () => {
+  it('expone id, categoría y título de cada check sin ejecutarlo, en el orden de ALL_CHECKS', () => {
+    const results = runChecks(good())
+    expect(CHECK_CATALOG).toEqual(results.map(({ id, category, title }) => ({ id, category, title })))
+  })
+
+  it('cada check definido lleva sus metadatos completos', () => {
+    for (const check of ALL_CHECKS) {
+      expect(check.meta.weight).toBeGreaterThan(0)
+      expect(check.meta.recommendation.length).toBeGreaterThan(0)
+    }
   })
 })
 

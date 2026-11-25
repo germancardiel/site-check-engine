@@ -58,8 +58,8 @@ describe('generateActionPlan', () => {
     expect(options.output).toBeDefined()
   })
 
-  it('avisa en la interfaz de que la generación puede tardar hasta un minuto', () => {
-    expect(AI_PENDING_HINT).toBe('Esto puede tardar hasta un minuto.')
+  it('avisa en la interfaz de que la generación puede tardar uno o dos minutos', () => {
+    expect(AI_PENDING_HINT).toBe('Esto puede tardar uno o dos minutos.')
   })
 
   it('lanza AiGenerationError(invalid_output) si la salida no cumple el esquema', async () => {

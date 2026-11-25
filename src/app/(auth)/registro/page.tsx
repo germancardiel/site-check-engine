@@ -17,7 +17,7 @@ export default function RegisterPage() {
           href="/login"
           className="font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
-          Inicia sesión
+          Entrar
         </Link>
       </p>
     </div>

@@ -10,9 +10,12 @@ export type CheckMeta = {
 
 export type Evaluation = { status: CheckStatus; message: string; recommendation?: string }
 
+/** A check that also exposes its metadata, so it can be listed without running it. */
+export type DefinedCheck = Check & { readonly meta: CheckMeta }
+
 /** Builds a pure check from its metadata and an evaluation function. */
-export function defineCheck(meta: CheckMeta, evaluate: (ctx: AuditContext) => Evaluation): Check {
-  return (ctx: AuditContext): CheckResult => {
+export function defineCheck(meta: CheckMeta, evaluate: (ctx: AuditContext) => Evaluation): DefinedCheck {
+  const check = (ctx: AuditContext): CheckResult => {
     const { status, message, recommendation } = evaluate(ctx)
     return {
       id: meta.id,
@@ -24,6 +27,7 @@ export function defineCheck(meta: CheckMeta, evaluate: (ctx: AuditContext) => Ev
       recommendation: status === 'pass' ? 'No hace falta ninguna acción.' : (recommendation ?? meta.recommendation),
     }
   }
+  return Object.assign(check, { meta })
 }
 
 /** Returns `pass` inside [min, max], `warn` outside and `fail` when the value is missing. */

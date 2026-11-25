@@ -3,6 +3,7 @@ import { diffAudits } from '../diff'
 import {
   CHECK_STATUS_LABEL,
   checkAnchorId,
+  groupCatalog,
   groupChecks,
   hasCheckChanges,
   resolveComparisonTarget,
@@ -124,5 +125,19 @@ describe('checkAnchorId', () => {
   it('genera un id de ancla estable y seguro para el fragmento', () => {
     expect(checkAnchorId('meta-description')).toBe('check-meta-description')
     expect(checkAnchorId('og:title x')).toBe('check-og-title-x')
+  })
+})
+
+describe('groupCatalog', () => {
+  it('separa el catálogo en SEO e IA conservando el orden', () => {
+    const catalog = [
+      { id: 'a', category: 'ai' as const, title: 'A' },
+      { id: 'b', category: 'seo' as const, title: 'B' },
+      { id: 'c', category: 'ai' as const, title: 'C' },
+    ]
+    expect(groupCatalog(catalog)).toEqual([
+      { category: 'seo', title: 'SEO', checks: [catalog[1]] },
+      { category: 'ai', title: 'Visibilidad en IA', checks: [catalog[0], catalog[2]] },
+    ])
   })
 })

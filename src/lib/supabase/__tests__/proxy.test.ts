@@ -54,6 +54,23 @@ describe('getAuthRedirect', () => {
     expect(getAuthRedirect('/registro', true)).toBe('/sitios')
   })
 
+  it('deja ver la landing con y sin sesión (un usuario con sesión no se redirige)', () => {
+    expect(getAuthRedirect('/', false)).toBeNull()
+    expect(getAuthRedirect('/', true)).toBeNull()
+  })
+
+  it('deja acceder sin sesión a robots.txt, sitemap.xml, llms.txt y la imagen Open Graph', () => {
+    for (const path of ['/robots.txt', '/sitemap.xml', '/llms.txt', '/opengraph-image', '/opengraph-image/abc123']) {
+      expect(getAuthRedirect(path, false)).toBeNull()
+      expect(getAuthRedirect(path, true)).toBeNull()
+    }
+  })
+
+  it('no abre rutas que solo empiezan como un archivo público', () => {
+    expect(getAuthRedirect('/llms.txt-privado', false)).toBe('/login')
+    expect(getAuthRedirect('/opengraph-images', false)).toBe('/login')
+  })
+
   it('deja ver /login y /registro sin sesión', () => {
     expect(getAuthRedirect('/login', false)).toBeNull()
     expect(getAuthRedirect('/registro', false)).toBeNull()

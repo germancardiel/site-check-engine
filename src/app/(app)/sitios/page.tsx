@@ -6,9 +6,7 @@ import { AddSiteForm } from '@/components/sites/add-site-form'
 import type { SiteWithLatestAudit } from '@/components/sites/site-card'
 import { SiteList } from '@/components/sites/site-list'
 import { SitesSkeleton } from '@/components/sites/sites-skeleton'
-import { SubmitButton } from '@/components/ui/submit-button'
 import { createClient } from '@/lib/supabase/server'
-import { logout } from './actions'
 
 export const metadata: Metadata = {
   title: 'Sitios · Faro',
@@ -51,10 +49,6 @@ async function SitesContent() {
 
   return (
     <>
-      <p className="text-zinc-700 dark:text-zinc-300">
-        Has iniciado sesión como{' '}
-        <span className="font-medium break-all text-zinc-900 dark:text-zinc-100">{user.email}</span>
-      </p>
       <AddSiteForm />
       <section aria-labelledby="site-list-title" className="flex flex-col gap-4">
         <h2 id="site-list-title" className="text-lg font-semibold">
@@ -68,18 +62,11 @@ async function SitesContent() {
 
 export default function SitesPage() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-12">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Tus sitios</h1>
-        <form action={logout}>
-          <SubmitButton variant="secondary" pendingLabel="Cerrando sesión…">
-            Cerrar sesión
-          </SubmitButton>
-        </form>
-      </div>
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-12">
+      <h1 className="text-2xl font-semibold tracking-tight">Tus sitios</h1>
       <Suspense fallback={<SitesSkeleton />}>
         <SitesContent />
       </Suspense>
-    </main>
+    </div>
   )
 }

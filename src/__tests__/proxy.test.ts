@@ -50,11 +50,21 @@ describe('proxy', () => {
     )
   })
 
+  it('deja ver la landing y la imagen Open Graph sin sesión, y la landing con sesión', async () => {
+    expect((await proxy(request('/'))).headers.get('location')).toBeNull()
+    expect((await proxy(request('/opengraph-image?abc'))).headers.get('location')).toBeNull()
+    auth.user = { id: 'u1' }
+    expect((await proxy(request('/'))).headers.get('location')).toBeNull()
+  })
+
   it('excluye los recursos estáticos del matcher', () => {
     const [pattern] = config.matcher
     const regex = new RegExp(`^${pattern}$`)
     expect(regex.test('/sitios')).toBe(true)
     expect(regex.test('/_next/static/chunk.js')).toBe(false)
     expect(regex.test('/favicon.ico')).toBe(false)
+    expect(regex.test('/robots.txt')).toBe(false)
+    expect(regex.test('/sitemap.xml')).toBe(false)
+    expect(regex.test('/llms.txt')).toBe(false)
   })
 })

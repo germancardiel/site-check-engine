@@ -84,7 +84,7 @@ Archivos esperados, decisiones ya tomadas.
 | T06 | Plan de acción y resumen de cambios con IA, con límites diarios | hecho (ronda 2) |
 | T10 | Corrección: hora actual durante el prerender (Blocking Route) | hecho (ronda 1) |
 | T11 | Cambiar el modelo de IA al plan gratuito (`recursive/flint-v1.0`) | hecho (ronda 1) |
-| T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | pendiente |
+| T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | hecho (ronda 1) |
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | pendiente |
 | T08 | Producción, usuario demo y README | pendiente |
 

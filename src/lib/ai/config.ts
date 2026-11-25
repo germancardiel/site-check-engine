@@ -10,5 +10,5 @@ export const AI_TIMEOUT_MS = 120_000
 /** Maximum size of a prompt (instructions + prompt), in characters (D-AI-04). */
 export const PROMPT_MAX_CHARS = 8_000
 
-/** Hint shown while an AI report is being generated (the model can take up to a minute). */
-export const AI_PENDING_HINT = 'Esto puede tardar hasta un minuto.'
+/** Hint shown while an AI report is being generated (reasoning models take one or two minutes). */
+export const AI_PENDING_HINT = 'Esto puede tardar uno o dos minutos.'

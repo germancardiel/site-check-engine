@@ -16,7 +16,7 @@ function ActionItem({ action, checks }: { action: PlanAction; checks: CheckResul
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h4 className="font-medium break-words text-zinc-900 dark:text-zinc-100">{action.title}</h4>
+        <h3 className="font-medium break-words text-zinc-900 dark:text-zinc-100">{action.title}</h3>
         <span className="flex flex-wrap gap-2">
           <span className={`${TAG} ${IMPACT_STYLE[action.impact]}`}>{IMPACT_LABEL[action.impact]}</span>
           <span className={`${TAG} border-zinc-300 text-zinc-800 dark:border-zinc-700 dark:text-zinc-200`}>

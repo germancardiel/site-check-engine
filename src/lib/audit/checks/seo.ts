@@ -1,5 +1,4 @@
-import type { Check } from '../types'
-import { defineCheck, lengthStatus } from './define'
+import { defineCheck, lengthStatus, type DefinedCheck } from './define'
 
 /** Thresholds (characters / ratio) used by the SEO checks. */
 export const SEO_THRESHOLDS = {
@@ -158,7 +157,7 @@ export const sitemapCheck = defineCheck(
       : { status: 'fail', message: 'No se encontró ningún sitemap.' },
 )
 
-export const SEO_CHECKS: Check[] = [
+export const SEO_CHECKS: DefinedCheck[] = [
   httpsCheck,
   status200Check,
   titleCheck,

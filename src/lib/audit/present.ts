@@ -1,4 +1,5 @@
 import type { AuditStatus } from '@/lib/supabase/types'
+import type { CheckInfo } from './checks'
 import { STATUS_RANK, type AuditDiff } from './diff'
 import type { CheckCategory, CheckResult, CheckStatus } from './types'
 
@@ -40,6 +41,17 @@ export function groupChecks(checks: CheckResult[]): CheckGroup[] {
       passed: sorted.filter((check) => check.status === 'pass'),
     }
   })
+}
+
+export type CatalogGroup = { category: CheckCategory; title: string; checks: CheckInfo[] }
+
+/** Splits the check catalog into the SEO and IA sections, keeping the catalog order. */
+export function groupCatalog(catalog: CheckInfo[]): CatalogGroup[] {
+  return CATEGORY_ORDER.map((category) => ({
+    category,
+    title: CHECK_CATEGORY_LABEL[category],
+    checks: catalog.filter((check) => check.category === category),
+  }))
 }
 
 /** Minimal columns needed to decide which audit to compare against. */

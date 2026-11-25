@@ -17,7 +17,7 @@ export default function LoginPage() {
           href="/registro"
           className="font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
-          Regístrate
+          Crear cuenta
         </Link>
       </p>
     </div>

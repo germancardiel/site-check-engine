@@ -1,7 +1,6 @@
 import { collectSchemaTypes, countWords, extractJsonLd, visibleText } from '../parse'
 import { isAgentBlocked, parseRobots } from '../robots'
-import type { Check } from '../types'
-import { defineCheck } from './define'
+import { defineCheck, type DefinedCheck } from './define'
 
 /** AI crawlers whose access to the site root is verified in robots.txt. */
 export const AI_CRAWLERS = ['GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'PerplexityBot', 'Google-Extended'] as const
@@ -87,7 +86,7 @@ export const headingStructureCheck = defineCheck(
   },
 )
 
-export const AI_CHECKS: Check[] = [
+export const AI_CHECKS: DefinedCheck[] = [
   aiCrawlersCheck,
   llmsTxtCheck,
   structuredDataCheck,

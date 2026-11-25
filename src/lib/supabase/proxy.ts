@@ -8,6 +8,8 @@ export const HOME_PATH = '/sitios'
 
 /** Routes reachable without a session. Everything else (the `(app)` group) is private. */
 const PUBLIC_PATHS = ['/']
+/** Public metadata files (and anything below them, e.g. hashed image variants). */
+const PUBLIC_FILES = ['/robots.txt', '/sitemap.xml', '/llms.txt', '/opengraph-image']
 /** Auth pages: a signed-in user is sent to the app instead. */
 const AUTH_PATHS = ['/login', '/registro']
 
@@ -20,6 +22,7 @@ export function getAuthRedirect(pathname: string, isSignedIn: boolean): string |
   const isAuthPage = AUTH_PATHS.some((path) => matches(pathname, path))
   if (isAuthPage) return isSignedIn ? HOME_PATH : null
   if (PUBLIC_PATHS.includes(pathname)) return null
+  if (PUBLIC_FILES.some((path) => matches(pathname, path))) return null
   return isSignedIn ? null : LOGIN_PATH
 }
 

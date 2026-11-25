@@ -1,6 +1,7 @@
 import { checkAnchorId, groupChecks, type CheckGroup } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
 import { CheckStatusBadge } from './check-status-badge'
+import { DetailsAnchorOpener } from './details-anchor-opener'
 
 function CheckItem({ check }: { check: CheckResult }) {
   return (
@@ -66,6 +67,7 @@ function CheckSection({ group }: { group: CheckGroup }) {
 export function CheckList({ checks }: { checks: CheckResult[] }) {
   return (
     <div className="flex flex-col gap-8">
+      <DetailsAnchorOpener />
       {groupChecks(checks).map((group) => (
         <CheckSection key={group.category} group={group} />
       ))}

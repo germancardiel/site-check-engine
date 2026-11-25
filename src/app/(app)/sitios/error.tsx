@@ -2,7 +2,7 @@
 
 export default function SitesError({ retry }: { error: unknown; retry: () => void }) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-start gap-4 px-4 py-12">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-start gap-4 px-4 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">Tus sitios</h1>
       <div role="alert" className="flex flex-col gap-2">
         <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -19,6 +19,6 @@ export default function SitesError({ retry }: { error: unknown; retry: () => voi
       >
         Reintentar
       </button>
-    </main>
+    </div>
   )
 }
