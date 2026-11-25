@@ -23,6 +23,26 @@ export function LandingFooter() {
               </Link>
             </li>
             <li>
+              <a href="#que-revisa" className={LINK_CLASS}>
+                Sobre nosotros
+              </a>
+            </li>
+            <li>
+              <a href="mailto:contacto@gcastudio.dev" className={LINK_CLASS}>
+                Contacto
+              </a>
+            </li>
+            <li>
+              <a href="#aviso-legal" className={LINK_CLASS}>
+                Aviso legal
+              </a>
+            </li>
+            <li>
+              <a href="#privacidad" className={LINK_CLASS}>
+                Privacidad
+              </a>
+            </li>
+            <li>
               <a href="/llms.txt" className={`${LINK_CLASS} font-mono text-xs`}>
                 llms.txt
               </a>

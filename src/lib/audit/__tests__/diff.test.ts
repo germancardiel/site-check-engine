@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { diffAudits, type AuditSnapshot } from '../diff'
 import type { CheckStatus } from '../types'
 
-const c = (id: string, status: CheckStatus) => ({ id, status, category: 'seo' as const, title: `Check ${id}` })
+const c = (id: string, status: CheckStatus) => ({ id, status, category: 'crawl' as const, title: `Check ${id}` })
 
 const snapshot = (checks: ReturnType<typeof c>[], score: number | null = 50): AuditSnapshot => ({
   score,
@@ -25,13 +25,17 @@ describe('diffAudits', () => {
     ])
     expect(diff.regressed.map((x) => [x.id, x.from, x.to])).toEqual([['c', 'pass', 'fail']])
     expect(diff.unchanged.map((x) => x.id)).toEqual(['d'])
-    expect(diff.added).toEqual([{ id: 'new', category: 'seo', title: 'Check new', from: null, to: 'pass' }])
-    expect(diff.removed).toEqual([{ id: 'old', category: 'seo', title: 'Check old', from: 'fail', to: null }])
+    expect(diff.added).toEqual([{ id: 'new', category: 'crawl', title: 'Check new', from: null, to: 'pass' }])
+    expect(diff.removed).toEqual([{ id: 'old', category: 'crawl', title: 'Check old', from: 'fail', to: null }])
   })
 
-  it('ordena los estados fail < warn < pass', () => {
-    const diff = diffAudits(snapshot([c('x', 'pass'), c('y', 'warn')]), snapshot([c('x', 'warn'), c('y', 'fail')]))
+  it('ordena los estados fail < warn < pass/na/error', () => {
+    const diff = diffAudits(
+      snapshot([c('x', 'pass'), c('y', 'warn'), c('z', 'na')]),
+      snapshot([c('x', 'warn'), c('y', 'fail'), c('z', 'error')]),
+    )
     expect(diff.regressed.map((x) => x.id)).toEqual(['x', 'y'])
+    expect(diff.unchanged.map((x) => x.id)).toEqual(['z'])
     expect(diff.improved).toEqual([])
   })
 

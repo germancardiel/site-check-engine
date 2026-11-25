@@ -3,9 +3,10 @@ import { logout } from '@/app/(app)/sitios/actions'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { BrandLink } from './brand-link'
 import { MainNav, NavLinks } from './main-nav'
+import { ThemeToggle } from './theme-toggle'
 import { UserEmail } from './user-email'
 
-/** Thin header of the private area: wordmark, navigation, user email and "Cerrar sesión". */
+/** Thin header of the private area: wordmark, navigation, user email, theme toggle and "Cerrar sesión". */
 export function AppHeader() {
   return (
     <header className="w-full border-b border-line">
@@ -22,6 +23,7 @@ export function AppHeader() {
           <Suspense fallback={<p className="text-xs text-ink-muted">Cargando usuario…</p>}>
             <UserEmail />
           </Suspense>
+          <ThemeToggle />
           <form action={logout} className="shrink-0">
             <SubmitButton variant="quiet" pendingLabel="Cerrando sesión…" className="min-h-8 px-0">
               Cerrar sesión

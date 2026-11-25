@@ -24,9 +24,20 @@ describe('buildSpecimen', () => {
   it('las notas salen del motor de puntuación real con los pesos reales', () => {
     const specimen = buildSpecimen()
     const expected = scoreChecks(
-      ALL_CHECKS.map(({ meta }) => ({ ...meta, status: SPECIMEN_STATUS[meta.id] ?? 'pass' })),
+      ALL_CHECKS.map((def) => ({
+        id: def.id,
+        category: def.category,
+        title: def.title,
+        weight: def.weight,
+        status: SPECIMEN_STATUS[def.id] ?? 'pass',
+      })),
     )
-    expect({ score: specimen.score, seoScore: specimen.seoScore, aiScore: specimen.aiScore }).toEqual(expected)
+    expect({
+      score: specimen.score,
+      seoScore: specimen.seoScore,
+      aiScore: specimen.aiScore,
+      label: specimen.label,
+    }).toEqual(expected)
     expect(specimen.seoScore).toBeLessThan(100)
     expect(specimen.aiScore).toBeLessThan(100)
   })

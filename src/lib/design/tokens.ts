@@ -17,15 +17,20 @@ export const TOKEN_NAMES = [
   'pass',
   'warn',
   'fail',
+  'glow-secondary',
 ] as const
 
 export type TokenName = (typeof TOKEN_NAMES)[number]
 
 const CREAM = '#F5F2EB'
 const INK = '#151519'
-const EMBER = '#EE671B'
-/** Lighter ember for the primary button hover: dark text on it keeps more than 4.5:1. */
-const EMBER_HOVER = '#F2884A'
+const TURQUOISE = '#14B8C4'
+/** Lighter turquoise for the primary button hover: dark text on it keeps more than 4.5:1. */
+const TURQUOISE_HOVER = '#38D0DC'
+/** Darker turquoise for text and focus ring on light surfaces (≥ 5.6:1 on ground/panel). */
+const TURQUOISE_DARK = '#0A6670'
+/** Secondary violet blur used only by the decorative `AmbientGlow` backdrop (CA11). */
+const VIOLET = '#6B4FD8'
 
 /**
  * Colour tokens of both themes. `globals.css` declares each one as `--color-<name>` with the
@@ -39,14 +44,15 @@ export const THEMES: Record<ThemeName, Record<TokenName, Color>> = {
     'ink-muted': { hex: '#B4B2AD' },
     line: { hex: CREAM, alpha: 0.18 },
     'line-strong': { hex: CREAM, alpha: 0.4 },
-    accent: { hex: EMBER },
-    'accent-hover': { hex: EMBER_HOVER },
+    accent: { hex: TURQUOISE },
+    'accent-hover': { hex: TURQUOISE_HOVER },
     'on-accent': { hex: INK },
-    'accent-text': { hex: EMBER },
-    focus: { hex: EMBER },
+    'accent-text': { hex: TURQUOISE },
+    focus: { hex: TURQUOISE },
     pass: { hex: '#3FB27F' },
     warn: { hex: '#F2C14E' },
-    fail: { hex: '#E5484D' },
+    fail: { hex: '#F06064' },
+    'glow-secondary': { hex: VIOLET },
   },
   light: {
     ground: { hex: CREAM },
@@ -55,14 +61,15 @@ export const THEMES: Record<ThemeName, Record<TokenName, Color>> = {
     'ink-muted': { hex: '#5C5A55' },
     line: { hex: INK, alpha: 0.14 },
     'line-strong': { hex: INK, alpha: 0.5 },
-    accent: { hex: EMBER },
-    'accent-hover': { hex: EMBER_HOVER },
+    accent: { hex: TURQUOISE },
+    'accent-hover': { hex: TURQUOISE_HOVER },
     'on-accent': { hex: INK },
-    'accent-text': { hex: '#A93F08' },
-    focus: { hex: '#A93F08' },
+    'accent-text': { hex: TURQUOISE_DARK },
+    focus: { hex: TURQUOISE_DARK },
     pass: { hex: '#1E7A4C' },
     warn: { hex: '#8A6500' },
     fail: { hex: '#C2342F' },
+    'glow-secondary': { hex: VIOLET },
   },
 }
 
@@ -93,13 +100,14 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
     { foreground: 'pass', background, min: GRAPHIC, use: 'icono pass' },
     { foreground: 'warn', background, min: GRAPHIC, use: 'icono warn' },
     { foreground: 'fail', background, min: GRAPHIC, use: 'icono fail' },
+    { foreground: 'pass', background, min: TEXT, use: 'texto de estado pass y deltas positivos' },
+    { foreground: 'warn', background, min: TEXT, use: 'texto de estado warn' },
+    { foreground: 'fail', background, min: TEXT, use: 'texto de estado fail y deltas negativos' },
     { foreground: 'ink-muted', background, min: GRAPHIC, use: 'trazo del gráfico (IA) y medidores' },
   ] satisfies ContrastPair[]),
-  { foreground: 'pass', background: 'ground', min: TEXT, use: 'texto de estado pass y deltas positivos' },
-  { foreground: 'warn', background: 'ground', min: TEXT, use: 'texto de estado warn' },
-  { foreground: 'fail', background: 'ground', min: TEXT, use: 'texto de estado fail y deltas negativos' },
   { foreground: 'on-accent', background: 'accent', min: TEXT, use: 'botón primario (reposo, activo y deshabilitado) y selección' },
   { foreground: 'on-accent', background: 'accent-hover', min: TEXT, use: 'botón primario en hover' },
   { foreground: 'ink', background: 'panel', min: TEXT, use: 'hover de botones secundarios, peligro, desplegables e inputs' },
   { foreground: 'ink', background: 'ground', min: GRAPHIC, use: 'borde en hover de inputs y botones secundarios' },
+  { foreground: 'ink-muted', background: 'ground', min: TEXT, use: 'texto de botones secundarios deshabilitados (sin opacidad)' },
 ]

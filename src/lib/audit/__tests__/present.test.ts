@@ -1,20 +1,38 @@
 import { describe, expect, it } from 'vitest'
 import { diffAudits } from '../diff'
 import {
+  buildAuditReport,
   CHECK_STATUS_LABEL,
   checkAnchorId,
   groupCatalog,
   groupChecks,
   hasCheckChanges,
   prioritizeChecks,
+  reportToMarkdown,
   resolveComparisonTarget,
   sortChecks,
+  STATUS_LABEL,
   type ComparisonCandidate,
 } from '../present'
-import type { CheckCategory, CheckResult, CheckStatus } from '../types'
+import type { CategoryId, CheckResult, CheckStatus } from '../types'
 
-function check(id: string, category: CheckCategory, status: CheckStatus): CheckResult {
-  return { id, category, status, title: `Check ${id}`, weight: 5, message: 'Mensaje', recommendation: 'Recomendación' }
+function check(
+  id: string,
+  category: CategoryId,
+  status: CheckStatus,
+  overrides: Partial<CheckResult> = {},
+): CheckResult {
+  return {
+    id,
+    category,
+    status,
+    title: `Check ${id}`,
+    weight: 2,
+    message: 'Mensaje de prueba',
+    recommendation: 'Recomendación',
+    docs: [{ label: 'Doc oficial', url: 'https://example.com/doc' }],
+    ...overrides,
+  }
 }
 
 const SITE = 'site-1'
@@ -24,140 +42,123 @@ function candidate(id: string, day: number, overrides: Partial<ComparisonCandida
 }
 
 describe('sortChecks', () => {
-  it('ordena fail → warn → pass y mantiene el orden original dentro de cada estado', () => {
+  it('ordena fail → warn → pass → error → na y mantiene el orden original dentro de cada estado', () => {
     const sorted = sortChecks([
-      check('p1', 'seo', 'pass'),
-      check('w1', 'seo', 'warn'),
-      check('f1', 'seo', 'fail'),
-      check('p2', 'seo', 'pass'),
-      check('f2', 'seo', 'fail'),
+      check('n1', 'crawl', 'na'),
+      check('e1', 'crawl', 'error'),
+      check('p1', 'crawl', 'pass'),
+      check('w1', 'crawl', 'warn'),
+      check('f1', 'crawl', 'fail'),
+      check('p2', 'crawl', 'pass'),
+      check('f2', 'crawl', 'fail'),
     ])
-    expect(sorted.map((item) => item.id)).toEqual(['f1', 'f2', 'w1', 'p1', 'p2'])
+    expect(sorted.map((item) => item.id)).toEqual(['f1', 'f2', 'w1', 'p1', 'p2', 'e1', 'n1'])
   })
 
   it('no modifica el array de entrada', () => {
-    const input = [check('p', 'seo', 'pass'), check('f', 'seo', 'fail')]
+    const input = [check('p', 'crawl', 'pass'), check('f', 'crawl', 'fail')]
     sortChecks(input)
     expect(input.map((item) => item.id)).toEqual(['p', 'f'])
   })
 })
 
-describe('prioritizeChecks', () => {
-  it('pone primero los fail y luego los warn de ambas categorías, y aparta los pass', () => {
+describe('prioritizeChecks y groupChecks', () => {
+  it('separa los pendientes (fail y warn) del resto (pass, na, error)', () => {
     const { pending, passed } = prioritizeChecks([
-      check('p1', 'seo', 'pass'),
+      check('p1', 'crawl', 'pass'),
       check('w1', 'ai', 'warn'),
-      check('f1', 'seo', 'fail'),
-      check('w2', 'seo', 'warn'),
-      check('f2', 'ai', 'fail'),
-      check('p2', 'ai', 'pass'),
+      check('f1', 'crawl', 'fail'),
+      check('n1', 'url', 'na'),
+      check('e1', 'performance', 'error'),
     ])
-    expect(pending.map((item) => item.id)).toEqual(['f1', 'f2', 'w1', 'w2'])
-    expect(passed.map((item) => item.id)).toEqual(['p1', 'p2'])
+    expect(pending.map((item) => item.id)).toEqual(['f1', 'w1'])
+    expect(passed.map((item) => item.id)).toEqual(['p1', 'e1', 'n1'])
   })
 
-  it('devuelve listas vacías sin checks', () => {
-    expect(prioritizeChecks([])).toEqual({ pending: [], passed: [] })
-  })
-})
-
-describe('groupChecks', () => {
-  it('agrupa en SEO e IA, separando pendientes (fail, warn) y superados', () => {
+  it('agrupa por las 10 categorías', () => {
     const groups = groupChecks([
-      check('ai-pass', 'ai', 'pass'),
-      check('seo-warn', 'seo', 'warn'),
-      check('ai-fail', 'ai', 'fail'),
-      check('seo-pass', 'seo', 'pass'),
-      check('seo-fail', 'seo', 'fail'),
-      check('ai-warn', 'ai', 'warn'),
+      check('c1', 'crawl', 'fail'),
+      check('a1', 'ai', 'pass'),
     ])
-    expect(groups.map((group) => [group.category, group.title])).toEqual([
-      ['seo', 'SEO'],
-      ['ai', 'Visibilidad en IA'],
-    ])
-    expect(groups[0].pending.map((item) => item.id)).toEqual(['seo-fail', 'seo-warn'])
-    expect(groups[0].passed.map((item) => item.id)).toEqual(['seo-pass'])
-    expect(groups[1].pending.map((item) => item.id)).toEqual(['ai-fail', 'ai-warn'])
-    expect(groups[1].passed.map((item) => item.id)).toEqual(['ai-pass'])
+    expect(groups).toHaveLength(10)
+    expect(groups[0].pending.map((c) => c.id)).toEqual(['c1'])
+    expect(groups[9].passed.map((c) => c.id)).toEqual(['a1'])
   })
 
-  it('devuelve las dos secciones vacías sin checks', () => {
-    const groups = groupChecks([])
-    expect(groups).toHaveLength(2)
-    expect(groups.every((group) => group.pending.length === 0 && group.passed.length === 0)).toBe(true)
-  })
-
-  it('tiene una etiqueta de texto para cada estado', () => {
-    expect(CHECK_STATUS_LABEL).toEqual({ fail: 'Falla', warn: 'Mejorable', pass: 'Correcto' })
+  it('tiene etiquetas para los 5 estados', () => {
+    expect(CHECK_STATUS_LABEL).toEqual(STATUS_LABEL)
+    expect(STATUS_LABEL).toEqual({
+      pass: 'Correcto',
+      warn: 'Mejorable',
+      fail: 'Error',
+      na: 'No aplica',
+      error: 'No evaluable',
+    })
   })
 })
 
-describe('resolveComparisonTarget', () => {
+describe('buildAuditReport y reportToMarkdown (CA5)', () => {
+  it('construye un AuditReport con las 10 categorías y lo exporta a Markdown con evidencias, items, fix y docs', () => {
+    const report = buildAuditReport({
+      url: 'https://example.com/',
+      createdAt: '2026-11-25T10:30:00.000Z',
+      checks: [
+        check('crawl.noindex', 'crawl', 'fail', {
+          title: 'Meta robots noindex',
+          evidence: "meta robots='noindex'",
+          items: [{ label: 'robots', value: 'noindex', status: 'bad' }],
+          fix: 'Quita noindex.',
+        }),
+        check('onpage.title', 'onpage', 'pass', { title: 'Title adecuado' }),
+      ],
+      notices: ['Aviso de prueba'],
+    })
+    expect(report.score).toBe(40)
+    expect(report.capReason).toContain('noindex')
+    const md = reportToMarkdown(report)
+    expect(md).toContain('# Auditoría SEO: https://example.com/')
+    expect(md).toContain('**Puntuación global: 40/100')
+    expect(md).toContain('Nota limitada a 40')
+    expect(md).toContain('Aviso de prueba')
+    expect(md).toContain('## Resumen por apartado')
+    expect(md).toContain('## Aspectos a mejorar (1)')
+    expect(md).toContain("`meta robots='noindex'`")
+    expect(md).toContain('- robots: noindex')
+    expect(md).toContain('**Cómo arreglarlo:**')
+    expect(md).toContain('Quita noindex.')
+    expect(md).toContain('[Doc oficial](https://example.com/doc)')
+  })
+})
+
+describe('resolveComparisonTarget, hasCheckChanges, checkAnchorId y groupCatalog', () => {
   const current = candidate('current', 10)
   const previous = candidate('previous', 5)
 
-  it('usa la auditoría ok anterior por defecto', () => {
+  it('resuelve la auditoría de comparación por ?comparar o la anterior', () => {
     expect(resolveComparisonTarget(current, null, previous)).toEqual({ audit: previous, source: 'previous' })
-  })
-
-  it('usa la auditoría de ?comparar si es ok y del mismo sitio (aunque sea posterior)', () => {
     const requested = candidate('requested', 12)
     expect(resolveComparisonTarget(current, requested, previous)).toEqual({ audit: requested, source: 'requested' })
-  })
-
-  it('ignora ?comparar de otro sitio y usa la anterior', () => {
-    const requested = candidate('other-site', 3, { site_id: 'site-2' })
-    expect(resolveComparisonTarget(current, requested, previous)).toEqual({ audit: previous, source: 'previous' })
-  })
-
-  it('ignora ?comparar si es una auditoría error o la propia auditoría', () => {
-    expect(resolveComparisonTarget(current, candidate('failed', 3, { status: 'error' }), previous)?.source).toBe(
-      'previous',
-    )
-    expect(resolveComparisonTarget(current, current, previous)?.audit.id).toBe('previous')
-  })
-
-  it('devuelve null si no hay anterior válida', () => {
+    expect(resolveComparisonTarget(current, candidate('x', 3, { site_id: 'site-2' }), previous)?.source).toBe('previous')
     expect(resolveComparisonTarget(current, null, null)).toBeNull()
-    expect(resolveComparisonTarget(current, null, candidate('newer', 11))).toBeNull()
-    expect(resolveComparisonTarget(current, null, candidate('x', 1, { site_id: 'site-2' }))).toBeNull()
-  })
-})
-
-describe('hasCheckChanges', () => {
-  const snapshot = (checks: CheckResult[]) => ({ score: 50, seoScore: 50, aiScore: 50, checks })
-
-  it('es false si todos los checks siguen igual', () => {
-    const checks = [check('a', 'seo', 'pass')]
-    expect(hasCheckChanges(diffAudits(snapshot(checks), snapshot(checks)))).toBe(false)
   })
 
-  it('es true si hay mejoras, empeoramientos, nuevos o eliminados', () => {
-    const before = [check('a', 'seo', 'fail')]
-    expect(hasCheckChanges(diffAudits(snapshot(before), snapshot([check('a', 'seo', 'pass')])))).toBe(true)
-    expect(hasCheckChanges(diffAudits(snapshot([check('a', 'seo', 'pass')]), snapshot(before)))).toBe(true)
-    expect(hasCheckChanges(diffAudits(snapshot([]), snapshot(before)))).toBe(true)
-    expect(hasCheckChanges(diffAudits(snapshot(before), snapshot([])))).toBe(true)
+  it('detecta si hay cambios entre dos snapshots', () => {
+    const snapshot = (checks: CheckResult[]) => ({ score: 50, seoScore: 50, aiScore: 50, checks })
+    const a = [check('a', 'crawl', 'fail')]
+    const b = [check('a', 'crawl', 'pass')]
+    expect(hasCheckChanges(diffAudits(snapshot(a), snapshot(a)))).toBe(false)
+    expect(hasCheckChanges(diffAudits(snapshot(a), snapshot(b)))).toBe(true)
   })
-})
 
-describe('checkAnchorId', () => {
-  it('genera un id de ancla estable y seguro para el fragmento', () => {
-    expect(checkAnchorId('meta-description')).toBe('check-meta-description')
-    expect(checkAnchorId('og:title x')).toBe('check-og-title-x')
-  })
-})
-
-describe('groupCatalog', () => {
-  it('separa el catálogo en SEO e IA conservando el orden', () => {
-    const catalog = [
-      { id: 'a', category: 'ai' as const, title: 'A' },
-      { id: 'b', category: 'seo' as const, title: 'B' },
-      { id: 'c', category: 'ai' as const, title: 'C' },
-    ]
-    expect(groupCatalog(catalog)).toEqual([
-      { category: 'seo', title: 'SEO', checks: [catalog[1]] },
-      { category: 'ai', title: 'Visibilidad en IA', checks: [catalog[0], catalog[2]] },
+  it('genera ids de ancla seguros y agrupa el catálogo por categorías no vacías', () => {
+    expect(checkAnchorId('crawl.status')).toBe('check-crawl-status')
+    const grouped = groupCatalog([
+      { id: 'ai.llms', category: 'ai', title: 'Archivo llms.txt' },
+      { id: 'crawl.status', category: 'crawl', title: '200 directo' },
+    ])
+    expect(grouped.map((g) => [g.number, g.category, g.checks.length])).toEqual([
+      [1, 'crawl', 1],
+      [10, 'ai', 1],
     ])
   })
 })

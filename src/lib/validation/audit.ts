@@ -1,14 +1,56 @@
 import { z } from 'zod'
-import type { CheckResult } from '@/lib/audit/types'
+import { CATEGORY_IDS } from '@/lib/audit/categories'
+import { deriveRecommendation } from '@/lib/audit/checks'
+import type { CategoryId, CheckResult } from '@/lib/audit/types'
 
-const checkResultSchema = z.object({
+const docLinkSchema = z.object({
+  label: z.string(),
+  url: z.string(),
+})
+
+const evidenceItemSchema = z.object({
+  label: z.string(),
+  value: z.string().optional(),
+  status: z.enum(['ok', 'bad', 'neutral']).optional(),
+})
+
+const rawCheckResultSchema = z.object({
   id: z.string().min(1),
-  category: z.enum(['seo', 'ai']),
+  category: z.enum([...CATEGORY_IDS, 'seo']),
   title: z.string(),
-  status: z.enum(['pass', 'warn', 'fail']),
+  status: z.enum(['pass', 'warn', 'fail', 'na', 'error']),
   weight: z.number().finite().nonnegative(),
   message: z.string(),
-  recommendation: z.string(),
+  evidence: z.string().optional(),
+  items: z.array(evidenceItemSchema).optional(),
+  fix: z.string().optional(),
+  docs: z.array(docLinkSchema).optional(),
+  recommendation: z.string().optional(),
+})
+
+const checkResultSchema = rawCheckResultSchema.transform((raw): CheckResult => {
+  const category: CategoryId = raw.category === 'seo' ? 'crawl' : raw.category
+  const docs = raw.docs ?? []
+  const recommendation =
+    raw.recommendation ??
+    deriveRecommendation({
+      status: raw.status,
+      message: raw.message,
+      fix: raw.fix,
+    })
+  return {
+    id: raw.id,
+    category,
+    title: raw.title,
+    status: raw.status,
+    weight: raw.weight,
+    message: raw.message,
+    ...(raw.evidence !== undefined ? { evidence: raw.evidence } : {}),
+    ...(raw.items !== undefined ? { items: raw.items } : {}),
+    ...(raw.fix !== undefined ? { fix: raw.fix } : {}),
+    docs,
+    recommendation,
+  }
 })
 
 /** Shape of the `audits.checks` jsonb column: the engine's `CheckResult[]`. */

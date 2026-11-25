@@ -125,7 +125,8 @@ export async function auditSite(_: SiteActionState, formData: FormData): Promise
   }
   if (claimed !== true) return { error: RATE_LIMITED }
 
-  const outcome = await runAudit(site.url)
+  // Server action (not prerendered): reading the clock here is safe; `src/lib` receives it (D-QA-08).
+  const outcome = await runAudit(site.url, { now: new Date() })
   const { error: insertError } = await supabase
     .from('audits')
     .insert(toAuditRow(site.id, user.id, outcome))

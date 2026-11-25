@@ -128,7 +128,7 @@ describe('auditSite', () => {
     runAudit.mockResolvedValue({ status: 'ok', score: 80, seoScore: 90, aiScore: 70, checks })
     const result = await auditSite({}, form({ siteId: SITE_ID }))
     expect(result).toEqual({ message: 'Auditoría completada.' })
-    expect(runAudit).toHaveBeenCalledWith('https://ejemplo.com')
+    expect(runAudit).toHaveBeenCalledWith('https://ejemplo.com', { now: expect.any(Date) })
     expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(runAudit.mock.invocationCallOrder[0])
     expect(callsOf('audits')).toEqual([
       {

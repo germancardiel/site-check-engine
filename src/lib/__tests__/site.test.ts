@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { AI_BOTS } from '@/lib/audit/ai-bots'
 import { CHECK_CATALOG } from '@/lib/audit/checks'
-import { AI_CRAWLERS } from '@/lib/audit/checks/ai'
-import { SEO_THRESHOLDS } from '@/lib/audit/checks/seo'
 import {
   absoluteUrl,
   buildLlmsTxt,
@@ -47,11 +46,11 @@ describe('resolveSiteUrl', () => {
 })
 
 describe('textos de la landing', () => {
-  it('el título y la descripción cumplen los umbrales del propio motor', () => {
-    expect(SITE_TITLE.length).toBeGreaterThanOrEqual(SEO_THRESHOLDS.titleMin)
-    expect(SITE_TITLE.length).toBeLessThanOrEqual(SEO_THRESHOLDS.titleMax)
-    expect(SITE_DESCRIPTION.length).toBeGreaterThanOrEqual(SEO_THRESHOLDS.descriptionMin)
-    expect(SITE_DESCRIPTION.length).toBeLessThanOrEqual(SEO_THRESHOLDS.descriptionMax)
+  it('el título (30–60) y la descripción (70–160) cumplen los umbrales del propio motor', () => {
+    expect(SITE_TITLE.length).toBeGreaterThanOrEqual(30)
+    expect(SITE_TITLE.length).toBeLessThanOrEqual(60)
+    expect(SITE_DESCRIPTION.length).toBeGreaterThanOrEqual(70)
+    expect(SITE_DESCRIPTION.length).toBeLessThanOrEqual(160)
   })
 })
 
@@ -67,7 +66,7 @@ describe('buildRobots', () => {
     const robots = buildRobots(BASE)
     expect(robots.rules).toEqual([
       { userAgent: '*', allow: '/' },
-      { userAgent: [...AI_CRAWLERS], allow: '/' },
+      { userAgent: AI_BOTS.map((b) => b.name), allow: '/' },
     ])
     expect(robots.sitemap).toBe('https://sce.example/sitemap.xml')
   })
@@ -81,28 +80,34 @@ describe('buildSitemap', () => {
 })
 
 describe('buildLlmsTxt', () => {
-  it('describe Site Check Engine, enlaza las páginas públicas y lista todos los checks', () => {
+  it('describe Site Check Engine, enlaza las páginas públicas y lista los 10 apartados y todos los checks', () => {
     const text = buildLlmsTxt(BASE)
     expect(text.startsWith('# Site Check Engine\n')).toBe(true)
     expect(text).toContain(`> ${SITE_DESCRIPTION}`)
     expect(text).toContain('- [Crear cuenta](https://sce.example/registro)')
-    expect(text).toContain('### SEO')
-    expect(text).toContain('### Visibilidad en IA')
+    expect(text).toContain('### 1. Rastreo e indexación')
+    expect(text).toContain('### 10. AI SEO (optimización para asistentes de IA)')
     for (const check of CHECK_CATALOG) expect(text).toContain(`- ${check.title}`)
   })
 
   it('usa el catálogo recibido', () => {
     const text = buildLlmsTxt(BASE, [{ id: 'x', category: 'ai', title: 'Check inventado' }])
     expect(text).toContain('- Check inventado')
-    expect(text).not.toContain('- HTTPS')
+    expect(text).not.toContain('- HTTPS con certificado válido')
   })
 })
 
 describe('JSON-LD', () => {
-  it('declara la entidad WebSite de Site Check Engine', () => {
-    expect(buildWebsiteJsonLd(BASE)).toMatchObject({
-      '@context': 'https://schema.org',
+  it('declara las entidades WebSite y Organization de Site Check Engine', () => {
+    const json = buildWebsiteJsonLd(BASE)
+    expect(json['@context']).toBe('https://schema.org')
+    expect(json['@graph'][0]).toMatchObject({
       '@type': 'WebSite',
+      name: 'Site Check Engine',
+      url: 'https://sce.example/',
+    })
+    expect(json['@graph'][1]).toMatchObject({
+      '@type': 'Organization',
       name: 'Site Check Engine',
       url: 'https://sce.example/',
     })

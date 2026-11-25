@@ -1,24 +1,25 @@
 import { ALL_CHECKS, CHECK_CATALOG, type CheckInfo } from './audit/checks'
 import { scoreChecks } from './audit/scoring'
-import type { CheckCategory, CheckStatus, Scores } from './audit/types'
+import type { CategoryId, CheckStatus, Scores } from './audit/types'
 
 /**
  * Fixed example statuses of the landing's sample report (any check not listed passes).
  * It is labelled as an example: these are not the results of a real audit.
  */
 export const SPECIMEN_STATUS: Readonly<Record<string, CheckStatus>> = {
-  'meta-description': 'warn',
-  'img-alt': 'warn',
-  'open-graph': 'fail',
-  'llms-txt': 'fail',
-  'entity-schema': 'warn',
+  'onpage.description': 'warn',
+  'content.alt': 'warn',
+  'onpage.og': 'fail',
+  'ai.llms': 'warn',
+  'schema.identity': 'warn',
+  'ai.webmcp': 'fail',
 }
 
-export type SpecimenRow = { id: string; title: string; category: CheckCategory; status: CheckStatus }
+export type SpecimenRow = { id: string; title: string; category: CategoryId; status: CheckStatus }
 
 export type Specimen = { rows: SpecimenRow[] } & Scores
 
-const WEIGHTS = new Map(ALL_CHECKS.map(({ meta }) => [meta.id, meta.weight]))
+const WEIGHTS = new Map(ALL_CHECKS.map((def) => [def.id, def.weight]))
 
 /** Sample report: every catalog check with its example status, and the scores they produce. */
 export function buildSpecimen(

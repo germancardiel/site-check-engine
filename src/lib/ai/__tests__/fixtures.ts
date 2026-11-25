@@ -5,12 +5,13 @@ import type { ActionPlan, ChangeSummary } from '../schemas'
 export function makeCheck(id: string, status: CheckStatus, overrides: Partial<CheckResult> = {}): CheckResult {
   return {
     id,
-    category: 'seo',
+    category: 'onpage',
     title: `Título ${id}`,
     status,
-    weight: 5,
+    weight: 2,
     message: `Mensaje ${id}.`,
     recommendation: `Recomendación ${id}.`,
+    docs: [],
     ...overrides,
   }
 }

@@ -1,8 +1,30 @@
 import type { CSSProperties } from 'react'
-import { StatusIcon } from '@/components/ui/status-icon'
 import { ScoreMeter } from '@/components/ui/score-meter'
-import { CHECK_STATUS_LABEL, groupCatalog } from '@/lib/audit/present'
+import { StatusIcon } from '@/components/ui/status-icon'
+import { CHECK_STATUS_LABEL } from '@/lib/audit/present'
 import { buildSpecimen, type SpecimenRow } from '@/lib/specimen'
+
+const PREVIEW_CHECK_IDS = [
+  'crawl.status',
+  'crawl.robots-txt',
+  'crawl.canonical',
+  'crawl.sitemap',
+  'onpage.title',
+  'onpage.description',
+  'onpage.headings',
+  'onpage.og',
+  'content.readability',
+  'content.alt',
+  'schema.detected',
+  'schema.identity',
+  'perf.ttfb',
+  'mobile.viewport',
+  'trust.https',
+  'ai.robots',
+  'ai.ssr',
+  'ai.llms',
+  'ai.webmcp',
+]
 
 /** Animation step of an element (the CSS turns it into a delay). */
 function step(index: number): CSSProperties {
@@ -41,11 +63,11 @@ function SpecimenItem({ row, index }: { row: SpecimenRow; index: number }) {
   )
 }
 
-/** Sample report of the landing: real catalog, fixed example statuses, resolving row by row. */
+/** Sample report of the landing: representative subset of checks resolving row by row. */
 export function SampleReport() {
   const specimen = buildSpecimen()
-  const groups = groupCatalog(specimen.rows)
-  const offsets = groups.map((_, index) => groups.slice(0, index).reduce((sum, group) => sum + group.checks.length, 0))
+  const byId = new Map(specimen.rows.map((r) => [r.id, r]))
+  const previewRows = PREVIEW_CHECK_IDS.map((id) => byId.get(id)).filter((r): r is SpecimenRow => Boolean(r))
 
   return (
     <figure aria-labelledby="informe-ejemplo" className="w-full rounded-md border border-line bg-panel">
@@ -53,31 +75,27 @@ export function SampleReport() {
         id="informe-ejemplo"
         className="flex items-center justify-between gap-4 border-b border-line px-4 py-3 font-mono text-xs tracking-wider text-ink-muted uppercase sm:px-5"
       >
-        <span>Informe de ejemplo</span>
+        <span>Informe de ejemplo · 10 apartados</span>
         <span aria-hidden="true" className="normal-case tracking-normal">
           tu-web.es
         </span>
       </figcaption>
       <div
         className="specimen-resolved grid grid-cols-2 gap-5 border-b border-line px-4 py-4 sm:px-5"
-        style={step(specimen.rows.length)}
+        style={step(previewRows.length)}
       >
         <ScoreMeter label="Nota SEO" value={specimen.seoScore} size="lg" />
         <ScoreMeter label="Nota IA" value={specimen.aiScore} size="lg" />
       </div>
-      <div className="flex flex-col gap-4 px-4 py-4 sm:px-5">
-        {groups.map((group, groupIndex) => (
-          <div key={group.category} className="flex flex-col gap-1">
-            <p className="font-mono text-xs tracking-wider text-ink-muted uppercase">
-              {group.title} · {group.checks.length} checks
-            </p>
-            <ol>
-              {group.checks.map((row, index) => (
-                <SpecimenItem key={row.id} row={row} index={offsets[groupIndex] + index} />
-              ))}
-            </ol>
-          </div>
-        ))}
+      <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
+        <p className="font-mono text-xs tracking-wider text-ink-muted uppercase">
+          Muestra de {previewRows.length} de {specimen.rows.length} checks
+        </p>
+        <ol>
+          {previewRows.map((row, index) => (
+            <SpecimenItem key={row.id} row={row} index={index} />
+          ))}
+        </ol>
       </div>
     </figure>
   )

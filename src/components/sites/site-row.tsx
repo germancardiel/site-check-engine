@@ -1,6 +1,9 @@
 import Link from 'next/link'
-import { StatusIcon } from '@/components/ui/status-icon'
+import { ArrowRightIcon } from '@/components/audits/category-icons'
+import { buttonClass } from '@/components/ui/button-styles'
+import { ChevronIcon } from '@/components/ui/chevron-icon'
 import { ScoreMeter } from '@/components/ui/score-meter'
+import { StatusIcon } from '@/components/ui/status-icon'
 import { formatRelativeTime, siteDisplayName } from '@/lib/format'
 import type { AuditStatus } from '@/lib/supabase/types'
 import { AuditSiteForm } from './audit-site-form'
@@ -58,13 +61,17 @@ function Scores({ audit }: { audit: LatestAudit | null }) {
 function LastAudit({ audit, siteId, now }: { audit: LatestAudit | null; siteId: string; now: Date }) {
   if (!audit) return <span aria-hidden="true" className="hidden font-mono text-xs text-ink-muted lg:inline">—</span>
   return (
-    <div className="flex flex-col gap-1 text-sm">
+    <div className="flex flex-col gap-2 text-sm">
       <time dateTime={audit.created_at} className="font-mono text-xs text-ink-muted">
         {formatRelativeTime(audit.created_at, now)}
       </time>
-      <Link href={`/sitios/${siteId}/auditorias/${audit.id}`} className={`${LINK_CLASS} self-start text-ink`}>
-        {audit.status === 'error' ? 'Ver el error' : 'Ver informe'}
+      <Link
+        href={`/sitios/${siteId}/auditorias/${audit.id}`}
+        className={buttonClass('primary', 'self-start gap-1.5 px-3 py-1.5')}
+      >
+        <span>{audit.status === 'error' ? 'Ver el error' : 'Ver informe'}</span>
         <span className="sr-only"> de la última auditoría</span>
+        <ArrowRightIcon className="size-3.5" />
       </Link>
     </div>
   )
@@ -73,21 +80,33 @@ function LastAudit({ audit, siteId, now }: { audit: LatestAudit | null; siteId: 
 /** One site of the list: name and URL, latest scores, when it was audited and its actions. */
 export function SiteRow({ site, now }: { site: SiteWithLatestAudit; now: Date }) {
   const displayName = siteDisplayName(site.name, site.url)
+  const siteHref = `/sitios/${site.id}`
 
   return (
-    <li className="grid gap-4 border-b border-line py-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_7.5rem_12rem] lg:items-start lg:gap-8">
-      <div className="flex min-w-0 flex-col gap-1">
+    <li className="grid gap-4 border-b border-line py-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_9.5rem_12rem] lg:items-start lg:gap-8">
+      <div className="flex min-w-0 flex-col gap-1.5">
         <h3 className="text-base font-semibold break-words text-ink">
-          <Link href={`/sitios/${site.id}`} className={LINK_CLASS}>
+          <Link href={siteHref} className={LINK_CLASS}>
             {displayName}
           </Link>
         </h3>
         <p className="font-mono text-xs break-all text-ink-muted">{site.url}</p>
+        <Link
+          href={siteHref}
+          className="inline-flex items-center gap-1 self-start rounded-sm pt-0.5 text-xs font-medium text-ink underline decoration-line-strong transition-colors duration-200 ease-out hover:decoration-ink"
+        >
+          <span>Historial y evolución</span>
+          <ChevronIcon className="size-3 text-ink-muted" />
+        </Link>
       </div>
       <Scores audit={site.latestAudit} />
       <LastAudit audit={site.latestAudit} siteId={site.id} now={now} />
       <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
-        <AuditSiteForm siteId={site.id} siteName={displayName} />
+        <AuditSiteForm
+          siteId={site.id}
+          siteName={displayName}
+          variant={site.latestAudit ? 'secondary' : 'primary'}
+        />
         <DeleteSiteForm siteId={site.id} siteName={displayName} />
       </div>
     </li>

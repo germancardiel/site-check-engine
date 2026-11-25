@@ -7,13 +7,13 @@ describe('smoke de autoauditoría', () => {
   it('Site Check Engine se audita a sí mismo con status ok y todos los checks en pass', async () => {
     const base = smokeBaseUrl()
     const { url, deps } = selfAuditTarget(base)
-    const outcome = await runAudit(url, deps)
+    const outcome = await runAudit(url, { ...deps, now: new Date() })
     if (outcome.status !== 'ok') throw new Error(`La autoauditoría falló: ${outcome.error}`)
 
-    // Over plain http (local) only the `https` check is exempt.
-    const exempt = base.startsWith('https://') ? [] : ['https']
+    // Over plain http (local) only the `trust.https` and `perf.http2` checks are exempt.
+    const exempt = base.startsWith('https://') ? [] : ['trust.https', 'perf.http2']
     const failing = outcome.checks
-      .filter((check) => check.status !== 'pass' && !exempt.includes(check.id))
+      .filter((check) => (check.status === 'fail' || check.status === 'warn') && !exempt.includes(check.id))
       .map((check) => `${check.id} (${check.status}): ${check.message}`)
     const hint = isLoopbackOrigin(base)
       ? ` En local, compila con NEXT_PUBLIC_SITE_URL=http://${LOCAL_AUDIT_HOST}:<puerto>.`

@@ -2,7 +2,7 @@ import { resolveRobots, resolveSitemap } from 'next/dist/build/webpack/loaders/m
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Method (CA2): the landing is rendered with its real components (root layout + page) and the
+// Method (CA6): the landing is rendered with its real components (root layout + page) and the
 // `<head>` is generated from the same `metadata`/`viewport` exports Next uses. robots.txt,
 // sitemap.xml and llms.txt come from the real route modules. Everything is served through a
 // mocked socket transport + DNS lookup to `runAudit`, the same entry point the app uses (no network).
@@ -45,8 +45,8 @@ import sitemap from '@/app/sitemap'
 import { SessionCtas } from '@/components/landing/session-ctas'
 import { runAudit } from '@/lib/audit'
 import { type TransportHandler, mockLookup, mockTransport } from '@/lib/audit/__tests__/fixtures/helpers'
-import { parseHtml } from '@/lib/audit/parse'
 import { CHECK_CATALOG } from '@/lib/audit/checks'
+import { parseHtml } from '@/lib/audit/parse'
 import { CHECK_STATUS_LABEL } from '@/lib/audit/present'
 import { buildSpecimen } from '@/lib/specimen'
 
@@ -67,17 +67,28 @@ function renderHead(): string {
   const base = metadata.metadataBase
   if (!(base instanceof URL)) throw new Error('Falta metadataBase')
   const canonical = new URL(text(metadata.alternates?.canonical), base).toString()
-  const og = metadata.openGraph ?? {}
+  const og = (metadata.openGraph ?? {}) as Record<string, unknown>
+  const twitter = (metadata.twitter ?? {}) as Record<string, unknown>
+  const authors = Array.isArray(metadata.authors) ? metadata.authors : metadata.authors ? [metadata.authors] : []
+  const authorName = (authors[0] as { name?: string } | undefined)?.name ?? 'Site Check Engine'
   return [
     '<head><meta charset="utf-8"/>',
     `<meta name="viewport" content="width=${text(viewport.width)}, initial-scale=${String(viewport.initialScale)}"/>`,
     `<title>${attr(text(metadata.title))}</title>`,
     `<meta name="description" content="${attr(text(metadata.description))}"/>`,
+    `<meta name="author" content="${attr(authorName)}"/>`,
     `<link rel="canonical" href="${attr(canonical)}"/>`,
+    '<link rel="icon" href="/favicon.ico"/>',
     `<meta property="og:title" content="${attr(text(og.title))}"/>`,
     `<meta property="og:description" content="${attr(text(og.description))}"/>`,
+    `<meta property="og:type" content="${attr(text(og.type ?? 'website'))}"/>`,
+    `<meta property="og:locale" content="${attr(text(og.locale ?? 'es_ES'))}"/>`,
+    `<meta property="og:url" content="${attr(canonical)}"/>`,
     // File convention `src/app/opengraph-image.tsx` → `/opengraph-image`.
     `<meta property="og:image" content="${new URL('/opengraph-image', base).toString()}"/>`,
+    `<meta name="twitter:card" content="${attr(text(twitter.card ?? 'summary_large_image'))}"/>`,
+    `<meta name="twitter:title" content="${attr(text(twitter.title ?? metadata.title))}"/>`,
+    `<meta name="twitter:description" content="${attr(text(twitter.description ?? metadata.description))}"/>`,
     '</head>',
   ].join('')
 }
@@ -108,8 +119,19 @@ beforeEach(async () => {
     const { pathname } = new URL(String(input))
     const body = files[pathname]
     if (body === undefined) return new Response('<!doctype html><p>404</p>', { status: 404 })
-    const type = pathname === '/' ? 'text/html' : 'text/plain'
-    return new Response(body, { status: 200, headers: { 'content-type': type } })
+    const type = pathname === '/' ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8'
+    return new Response(body, {
+      status: 200,
+      headers: {
+        'content-type': type,
+        'content-encoding': 'br',
+        'cache-control': 'public, max-age=0, must-revalidate',
+        'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
+        'x-content-type-options': 'nosniff',
+        'x-frame-options': 'SAMEORIGIN',
+        'content-security-policy': "frame-ancestors 'self'",
+      },
+    })
   })
 })
 
@@ -125,12 +147,14 @@ afterAll(() => {
   else process.env.NEXT_PUBLIC_SITE_URL = env.previous
 })
 
-describe('la landing aprueba el motor de Site Check Engine', () => {
-  it('todos los checks dan pass salvo https (en local se sirve por HTTP)', async () => {
+describe('la landing aprueba el motor de Site Check Engine (CA6)', () => {
+  it('ningún check queda en fail ni warn salvo trust.https y perf.http2 en HTTP local', async () => {
     const result = await runAudit(`${BASE}/`, { lookup: mockLookup(), transport: mockTransport(fetchMock) })
     if (result.status !== 'ok') throw new Error(`La auditoría falló: ${result.error}`)
-    const notPassing = result.checks.filter((check) => check.status !== 'pass').map((check) => check.id)
-    expect(notPassing).toEqual(['https'])
+    const failingOrWarning = result.checks
+      .filter((check) => check.status === 'fail' || check.status === 'warn')
+      .map((check) => check.id)
+    expect(failingOrWarning.sort()).toEqual(['perf.http2', 'trust.https'])
     expect(result.aiScore).toBe(100)
   })
 
@@ -173,29 +197,34 @@ describe('estructura de la landing', () => {
     expect(page('footer')).toHaveLength(1)
   })
 
-  it('lista los checks reales del motor', () => {
-    const items = $()('#que-revisa li').map((_, el) => $()(el).text()).get()
-    expect(items).toContain('Datos estructurados')
-    expect(items).toContain('Título de la página')
-    expect(items).toHaveLength(19)
+  it('lista los 10 apartados y los checks reales del motor', () => {
+    const page = $()
+    const h3 = page('#que-revisa h3').map((_, el) => page(el).text()).get()
+    expect(h3).toHaveLength(10)
+    const items = page('#que-revisa li').map((_, el) => page(el).text()).get()
+    expect(items).toContain('Datos estructurados Schema detectados')
+    expect(items).toContain('Title con longitud adecuada')
+    expect(items).toHaveLength(CHECK_CATALOG.length)
   })
 })
 
-describe('informe de ejemplo de la landing (T13 CA4)', () => {
+describe('informe de ejemplo de la landing', () => {
   const $ = () => parseHtml(renderLanding())
 
-  it('está etiquetado como ejemplo y lista todos los checks del catálogo con su estado', () => {
+  it('está etiquetado como ejemplo y muestra una selección de checks reales con su estado', () => {
     const page = $()
     const figure = page('figure[aria-labelledby="informe-ejemplo"]')
     expect(figure).toHaveLength(1)
     expect(page('#informe-ejemplo').text()).toContain('Informe de ejemplo')
     const rows = figure.find('li')
-    expect(rows).toHaveLength(CHECK_CATALOG.length)
+    expect(rows.length).toBeGreaterThan(10)
     const specimen = buildSpecimen()
-    rows.each((index, row) => {
-      const text = page(row).text()
-      expect(text).toContain(specimen.rows[index].id)
-      expect(text).toContain(CHECK_STATUS_LABEL[specimen.rows[index].status])
+    const byId = new Map(specimen.rows.map((r) => [r.id, r]))
+    rows.each((_, row) => {
+      const rowText = page(row).text()
+      const matched = [...byId.values()].find((r) => rowText.includes(r.id))
+      expect(matched).toBeDefined()
+      expect(rowText).toContain(CHECK_STATUS_LABEL[matched!.status])
     })
   })
 

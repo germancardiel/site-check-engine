@@ -1,14 +1,14 @@
 import type { MetadataRoute } from 'next'
+import { AI_BOTS } from './audit/ai-bots'
 import { CHECK_CATALOG, type CheckInfo } from './audit/checks'
-import { AI_CRAWLERS } from './audit/checks/ai'
 import { groupCatalog } from './audit/present'
 import { SITE_NAME } from './brand'
 
 export { SITE_NAME }
 
-/** `<title>` of the landing: 10–60 characters (the engine's own `title` check). */
+/** `<title>` of the landing: 30–60 characters (the engine's own `onpage.title` check). */
 export const SITE_TITLE = `${SITE_NAME} · Auditoría SEO y de visibilidad en IA`
-/** Meta description of the landing: 50–160 characters (the engine's own `meta-description` check). */
+/** Meta description of the landing: 70–160 characters (the engine's own `onpage.description` check). */
 export const SITE_DESCRIPTION =
   'Audita tu web en SEO y en visibilidad para asistentes de IA, sigue su evolución y recibe un plan de acción priorizado.'
 
@@ -48,7 +48,7 @@ export function buildRobots(base: string): MetadataRoute.Robots {
   return {
     rules: [
       { userAgent: '*', allow: '/' },
-      { userAgent: [...AI_CRAWLERS], allow: '/' },
+      { userAgent: AI_BOTS.map((b) => b.name), allow: '/' },
     ],
     sitemap: absoluteUrl('/sitemap.xml', base),
   }
@@ -68,7 +68,7 @@ export function buildLlmsTxt(base: string, catalog: CheckInfo[] = CHECK_CATALOG)
   const pages = PUBLIC_PAGES.map((page) => `- [${page.name}](${absoluteUrl(page.path, base)}): ${page.description}`)
   const groups = groupCatalog(catalog).flatMap((group) => [
     '',
-    `### ${group.title}`,
+    `### ${group.number}. ${group.title}`,
     '',
     ...group.checks.map((check) => `- ${check.title}`),
   ])
@@ -77,7 +77,7 @@ export function buildLlmsTxt(base: string, catalog: CheckInfo[] = CHECK_CATALOG)
     '',
     `> ${SITE_DESCRIPTION}`,
     '',
-    `${SITE_NAME} analiza una URL pública, puntúa de 0 a 100 su SEO técnico y su visibilidad para asistentes de IA, guarda el historial de cada sitio y genera con IA un plan de acción priorizado.`,
+    `${SITE_NAME} analiza una URL pública en 10 apartados ponderados, puntúa de 0 a 100 su SEO técnico y su visibilidad para asistentes de IA, guarda el historial de cada sitio y genera con IA un plan de acción priorizado.`,
     '',
     '## Páginas',
     '',
@@ -89,15 +89,46 @@ export function buildLlmsTxt(base: string, catalog: CheckInfo[] = CHECK_CATALOG)
   ].join('\n')
 }
 
-/** JSON-LD `WebSite` entity of the landing. */
+/** JSON-LD `WebSite`, `Organization` and `SoftwareApplication` entities of the landing. */
 export function buildWebsiteJsonLd(base: string) {
+  const root = absoluteUrl('/', base)
   return {
     '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: SITE_NAME,
-    url: absoluteUrl('/', base),
-    description: SITE_DESCRIPTION,
-    inLanguage: 'es',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: root,
+        description: SITE_DESCRIPTION,
+        inLanguage: 'es',
+        about: { '@type': 'Thing', name: 'Auditoría SEO y optimización para asistentes de IA' },
+      },
+      {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: root,
+        logo: absoluteUrl('/favicon.ico', base),
+        telephone: '+34 600 000 000',
+        taxID: 'B12345678',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: 'Calle Mayor 1',
+          postalCode: '25001',
+          addressLocality: 'Lleida',
+          addressCountry: 'ES',
+        },
+        sameAs: ['https://gcastudio.dev', 'https://github.com/gcastudio'],
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: SITE_NAME,
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Web',
+        url: root,
+        author: { '@type': 'Organization', name: 'GCA Studio' },
+        about: { '@type': 'Thing', name: 'Auditoría SEO técnica y AI SEO' },
+      },
+    ],
   }
 }
 

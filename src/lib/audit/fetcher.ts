@@ -3,7 +3,7 @@ import { AuditFetchError } from './errors'
 import { isBlockedIp, isLocalHostname } from './ip'
 import { createSafeLookup, defaultLookup } from './safe-lookup'
 import { nodeTransport } from './transport'
-import type { SafeFetchOptions, SafeFetchResult } from './types'
+import type { RedirectHop, SafeFetchOptions, SafeFetchResult } from './types'
 
 export { AuditFetchError, type AuditFetchErrorCode } from './errors'
 export { resolvePublicAddresses } from './safe-lookup'
@@ -13,7 +13,13 @@ export const DEFAULT_TIMEOUT_MS = 10_000
 export const DEFAULT_MAX_BYTES = 3 * 1024 * 1024
 export const DEFAULT_MAX_REDIRECTS = 5
 
-type ResolvedOptions = Required<SafeFetchOptions>
+type ResolvedOptions = {
+  transport: NonNullable<SafeFetchOptions['transport']>
+  lookup: NonNullable<SafeFetchOptions['lookup']>
+  timeoutMs: number
+  maxBytes: number
+  maxRedirects: number
+}
 
 function parseHttpUrl(raw: string): URL {
   let url: URL
@@ -70,13 +76,19 @@ function isRedirect(response: Response): boolean {
   return response.status >= 300 && response.status < 400 && response.headers.has('location')
 }
 
-async function request(options: ResolvedOptions, url: URL, signal: AbortSignal): Promise<Response> {
+async function request(
+  options: ResolvedOptions,
+  url: URL,
+  signal: AbortSignal,
+): Promise<{ response: Response; ttfbMs: number }> {
+  const started = performance.now()
   try {
-    return await options.transport(url.toString(), {
+    const response = await options.transport(url.toString(), {
       signal,
       lookup: createSafeLookup(options.lookup),
       headers: { 'user-agent': USER_AGENT, accept: 'text/html,text/plain;q=0.9,*/*;q=0.8' },
     })
+    return { response, ttfbMs: Math.max(0, Math.round(performance.now() - started)) }
   } catch (cause) {
     if (cause instanceof AuditFetchError) throw cause
     if (signal.aborted) throw new AuditFetchError('TIMEOUT', `Timeout fetching ${url}`, { cause })
@@ -90,14 +102,23 @@ async function fetchFollowing(
   signal: AbortSignal,
 ): Promise<SafeFetchResult> {
   const redirects: string[] = []
+  const redirectChain: RedirectHop[] = []
   let current = start
   for (;;) {
     assertPublicHost(current)
-    const response = await request(options, current, signal)
+    const { response, ttfbMs } = await request(options, current, signal)
     if (!isRedirect(response)) {
       const body = await readBody(response, options.maxBytes)
       const headers = Object.fromEntries(response.headers.entries())
-      return { finalUrl: current.toString(), status: response.status, headers, body, redirects }
+      return {
+        finalUrl: current.toString(),
+        status: response.status,
+        headers,
+        body,
+        redirects,
+        redirectChain,
+        ttfbMs,
+      }
     }
     await response.body?.cancel()
     if (redirects.length >= options.maxRedirects) {
@@ -109,6 +130,7 @@ async function fetchFollowing(
     } catch (cause) {
       throw new AuditFetchError('INVALID_URL', 'Invalid redirect location', { cause })
     }
+    redirectChain.push({ url: current.toString(), status: response.status })
     redirects.push(next.toString())
     current = next
   }

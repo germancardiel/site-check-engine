@@ -89,6 +89,8 @@ Archivos esperados, decisiones ya tomadas.
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | hecho (ronda 1) |
 | T08 | Producción, usuario demo y README | hecho (ronda 1) |
 | T13 | Rediseño (lenguaje de gcastudio.dev) y cambio de nombre a Site Check Engine | hecho (ronda 2) |
+| T14 | Auditoría de 10 apartados con bibliografía, evidencias y vista estilo GCA Studio | hecho (ronda 2) |
+| T15 | Descargar el Plan de acción en Markdown | pendiente |
 
 Actualiza el estado (`pendiente` → `en curso` → `hecho (ronda N)`) al cerrar cada tarea.
 

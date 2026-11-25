@@ -59,7 +59,7 @@ export const FAILED_MSG = 'No se pudo generar el plan. Inténtalo de nuevo.'
 export const CHANGES_FAILED_MSG = 'No se pudo generar el resumen. Inténtalo de nuevo.'
 
 export const checks = [
-  { id: 'title', category: 'seo', title: 'Título', status: 'fail', weight: 5, message: 'm', recommendation: 'r' },
+  { id: 'title', category: 'crawl', title: 'Título', status: 'fail', weight: 5, message: 'm', recommendation: 'r', docs: [] },
 ]
 export const audit = {
   id: AUDIT_ID,

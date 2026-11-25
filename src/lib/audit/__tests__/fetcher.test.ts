@@ -207,13 +207,15 @@ describe('safeFetch — éxito', () => {
     fetchMock.mockResolvedValueOnce(htmlResponse('<h1>Hola</h1>', { headers: { 'X-Robots-Tag': 'all' } }))
     const lookup = mockLookup()
     const result = await fetchWith(PAGE_URL, { lookup })
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       finalUrl: PAGE_URL,
       status: 200,
       headers: { 'x-robots-tag': 'all', 'content-type': 'text/html' },
       body: '<h1>Hola</h1>',
       redirects: [],
+      redirectChain: [],
     })
+    expect(result.ttfbMs).toBeGreaterThanOrEqual(0)
     const [input, init] = fetchMock.mock.calls[0]
     expect(input).toBe(PAGE_URL)
     expect(new Headers(init.headers).get('user-agent')).toBe(USER_AGENT)

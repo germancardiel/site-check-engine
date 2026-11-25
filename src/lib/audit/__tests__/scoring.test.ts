@@ -1,56 +1,95 @@
 import { describe, expect, it } from 'vitest'
-import { categoryScore, scoreChecks } from '../scoring'
-import type { CheckCategory, CheckStatus } from '../types'
+import {
+  BLOCKING_CAP,
+  buildCategories,
+  isEvaluable,
+  isIssue,
+  labelFor,
+  scoreAudit,
+  scoreCheckList,
+  scoreChecks,
+} from '../scoring'
+import type { CategoryId, CheckResult, CheckStatus } from '../types'
 
-const check = (category: CheckCategory, status: CheckStatus, weight = 1) => ({ category, status, weight })
+const check = (
+  category: CategoryId,
+  status: CheckStatus,
+  weight = 1,
+  id = `${category}-${status}`,
+): CheckResult => ({
+  id,
+  category,
+  title: id,
+  status,
+  weight,
+  message: '',
+  recommendation: '',
+  docs: [],
+})
 
-describe('scoreChecks', () => {
-  it('todo pass da 100 en todas las notas', () => {
-    expect(scoreChecks([check('seo', 'pass', 3), check('ai', 'pass', 2)])).toEqual({ score: 100, seoScore: 100, aiScore: 100 })
+describe('scoreCheckList y scoreChecks (CA3)', () => {
+  it('pass = 1, warn = 0.5, fail = 0; na y error no penalizan', () => {
+    expect(scoreCheckList([check('crawl', 'pass', 3), check('crawl', 'fail', 1)])).toBe(75)
+    expect(scoreCheckList([check('crawl', 'warn'), check('crawl', 'pass')])).toBe(75)
+    expect(scoreCheckList([check('crawl', 'pass'), check('crawl', 'na'), check('crawl', 'error')])).toBe(100)
+    expect(scoreCheckList([check('crawl', 'na'), check('crawl', 'error')])).toBeNull()
+    expect(isEvaluable('pass')).toBe(true)
+    expect(isEvaluable('na')).toBe(false)
+    expect(isIssue('warn')).toBe(true)
+    expect(isIssue('pass')).toBe(false)
+  })
+
+  it('todo pass da 100 en score, seoScore y aiScore', () => {
+    const result = scoreChecks([check('crawl', 'pass', 3), check('ai', 'pass', 2)])
+    expect(result).toEqual({
+      score: 100,
+      seoScore: 100,
+      aiScore: 100,
+      label: 'Excelente',
+    })
   })
 
   it('todo fail da 0 en todas las notas', () => {
-    expect(scoreChecks([check('seo', 'fail', 3), check('ai', 'fail', 2)])).toEqual({ score: 0, seoScore: 0, aiScore: 0 })
+    const result = scoreChecks([check('crawl', 'fail', 3), check('ai', 'fail', 2)])
+    expect(result).toEqual({
+      score: 0,
+      seoScore: 0,
+      aiScore: 0,
+      label: 'Deficiente',
+    })
   })
 
-  it('mezcla: media ponderada con warn = 0,5', () => {
-    // SEO: (3·1 + 1·0,5 + 2·0) / 6 = 58,33 → 58 · IA: (1·1 + 1·0) / 2 = 50
-    const result = scoreChecks([
-      check('seo', 'pass', 3),
-      check('seo', 'warn', 1),
-      check('seo', 'fail', 2),
-      check('ai', 'pass'),
-      check('ai', 'fail'),
+  it('aplica BLOCKING_CAP = 40 y devuelve capReason si falla crawl.status, crawl.robots-txt o crawl.noindex', () => {
+    const cats = buildCategories([
+      check('crawl', 'fail', 3, 'crawl.noindex'),
+      check('onpage', 'pass', 3, 'onpage.title'),
+      check('ai', 'pass', 3, 'ai.ssr'),
     ])
-    expect(result).toEqual({ seoScore: 58, aiScore: 50, score: 54 })
+    const scored = scoreAudit(cats)
+    expect(scored.score).toBe(BLOCKING_CAP)
+    expect(scored.capReason).toBe('La página tiene la directiva noindex')
   })
 
-  it('redondea cada categoría y la nota global', () => {
-    // SEO: 2/3 = 66,67 → 67 · IA: 1/2·… warn = 0,5 → 50 · global (67 + 50) / 2 = 58,5 → 59
-    const result = scoreChecks([
-      check('seo', 'pass'),
-      check('seo', 'pass'),
-      check('seo', 'fail'),
-      check('ai', 'warn'),
+  it('devuelve las etiquetas Excelente (≥90), Bueno (≥75), Mejorable (≥50) y Deficiente (<50)', () => {
+    expect(labelFor(95)).toBe('Excelente')
+    expect(labelFor(80)).toBe('Bueno')
+    expect(labelFor(55)).toBe('Mejorable')
+    expect(labelFor(30)).toBe('Deficiente')
+  })
+
+  it('ordena los issues con fail primero y luego por impacto (check.weight × category.weight)', () => {
+    const cats = buildCategories([
+      check('crawl', 'warn', 3, 'crawl.a'),
+      check('international', 'fail', 1, 'intl.b'),
+      check('crawl', 'fail', 3, 'crawl.c'),
     ])
-    expect(result).toEqual({ seoScore: 67, aiScore: 50, score: 59 })
+    const { issues } = scoreAudit(cats)
+    expect(issues.map((i) => i.checkId)).toEqual(['crawl.c', 'intl.b', 'crawl.a'])
   })
 
-  it('una categoría sin checks cuenta como 0', () => {
-    expect(scoreChecks([check('seo', 'pass')])).toEqual({ score: 50, seoScore: 100, aiScore: 0 })
-    expect(scoreChecks([])).toEqual({ score: 0, seoScore: 0, aiScore: 0 })
-  })
-
-  it('devuelve enteros entre 0 y 100', () => {
-    const { score, seoScore, aiScore } = scoreChecks([check('seo', 'warn', 7), check('ai', 'pass', 3), check('ai', 'warn', 11)])
-    for (const value of [score, seoScore, aiScore]) {
-      expect(Number.isInteger(value)).toBe(true)
-      expect(value).toBeGreaterThanOrEqual(0)
-      expect(value).toBeLessThanOrEqual(100)
-    }
-  })
-
-  it('ignora checks con peso 0', () => {
-    expect(categoryScore([check('seo', 'fail', 0), check('seo', 'pass')], 'seo')).toBe(100)
+  it('ignora checks con peso 0 y devuelve null en listas sin checks evaluables', () => {
+    expect(scoreCheckList([check('crawl', 'fail', 0), check('crawl', 'pass', 1)])).toBe(100)
+    expect(scoreCheckList([])).toBeNull()
+    expect(scoreChecks([])).toEqual({ score: 0, seoScore: 0, aiScore: 0, label: 'Deficiente' })
   })
 })

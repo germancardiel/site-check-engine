@@ -23,7 +23,7 @@ export function buildRequestOptions(url: URL, init: TransportInit): https.Reques
     port: url.port || undefined,
     path: `${url.pathname}${url.search}`,
     method: 'GET',
-    headers: { ...init.headers, host: url.host },
+    headers: { 'accept-encoding': 'br, gzip, deflate', ...init.headers, host: url.host },
     lookup: init.lookup,
     signal: init.signal,
     // A fresh agent per request: no pooled socket is reused across hosts or validations.

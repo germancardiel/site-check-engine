@@ -5,16 +5,15 @@ import { Suspense, type ReactNode } from 'react'
 import { ChangesSection } from '@/components/ai/changes-section'
 import { PlanSection } from '@/components/ai/plan-section'
 import { AuditComparison } from '@/components/audits/audit-comparison'
-import { AuditSummary } from '@/components/audits/audit-summary'
-import { CheckList } from '@/components/audits/check-list'
 import { CompareForm, type CompareOption } from '@/components/audits/compare-form'
 import { DetailSkeleton } from '@/components/audits/detail-skeleton'
+import { ReportView } from '@/components/audits/report-view'
 import { AuditSiteForm } from '@/components/sites/audit-site-form'
 import { BackLink } from '@/components/ui/back-link'
 import { StatusIcon } from '@/components/ui/status-icon'
 import { madridDay, readAuditReports, remainingGenerations } from '@/lib/ai/reports'
 import { diffAudits, type AuditDiff } from '@/lib/audit/diff'
-import { resolveComparisonTarget } from '@/lib/audit/present'
+import { buildAuditReport, resolveComparisonTarget } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
 import { formatAbsoluteDate, formatRelativeTime, siteDisplayName } from '@/lib/format'
 import { SITE_NAME } from '@/lib/site'
@@ -161,14 +160,18 @@ function ComparisonSection({ comparison, options, action, aiSummary }: Compariso
   )
 }
 
-async function OkAuditBody({ supabase, userId, audit, compareParam, action, now }: {
+type OkAuditBodyProps = {
   supabase: Supabase
   userId: string
+  siteUrl: string
+  displayName: string
   audit: AuditRow
   compareParam: string | string[] | undefined
   action: string
   now: Date
-}) {
+}
+
+async function OkAuditBody({ supabase, userId, siteUrl, displayName, audit, compareParam, action, now }: OkAuditBodyProps) {
   const checks = parseChecks(audit.checks)
   if (!checks.ok) {
     console.error('[AuditPage] invalid checks', audit.id, checks.error)
@@ -199,14 +202,23 @@ async function OkAuditBody({ supabase, userId, audit, compareParam, action, now 
     />
   ) : null
 
+  const report = buildAuditReport({
+    url: siteUrl,
+    createdAt: audit.created_at,
+    checks: checks.checks,
+    score: audit.score,
+    seoScore: audit.seo_score,
+    aiScore: audit.ai_score,
+  })
+
   return (
     <>
-      <section aria-labelledby="checks-title" className="flex flex-col gap-5">
-        <h2 id="checks-title" className="text-2xl font-semibold">
-          Qué arreglar primero
-        </h2>
-        <CheckList checks={checks.checks} />
-      </section>
+      <ReportView
+        report={report}
+        previous={previous ? { score: previous.score, date: previous.created_at } : null}
+        relativeTime={formatRelativeTime(audit.created_at, now)}
+        reAuditAction={<AuditSiteForm siteId={audit.site_id} siteName={displayName} label="Volver a auditar" variant="primary" />}
+      />
       <PlanSection
         siteId={audit.site_id}
         auditId={audit.id}
@@ -254,17 +266,16 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
           <AuditSiteForm siteId={site.id} siteName={displayName} label="Volver a auditar" variant="primary" />
         </section>
       ) : (
-        <>
-          <AuditSummary
-            score={audit.score}
-            seoScore={audit.seo_score}
-            aiScore={audit.ai_score}
-            createdAt={audit.created_at}
-            now={now}
-            action={<AuditSiteForm siteId={site.id} siteName={displayName} label="Volver a auditar" variant="primary" />}
-          />
-          <OkAuditBody supabase={supabase} userId={userId} audit={audit} compareParam={query.comparar} action={action} now={now} />
-        </>
+        <OkAuditBody
+          supabase={supabase}
+          userId={userId}
+          siteUrl={site.url}
+          displayName={displayName}
+          audit={audit}
+          compareParam={query.comparar}
+          action={action}
+          now={now}
+        />
       )}
     </>
   )

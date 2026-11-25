@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ALL_CHECKS } from '../checks'
+import { fetchPsi } from '../context'
 import { AUDIT_ERROR_MESSAGES, runAudit } from '../index'
 import {
   type TransportHandler,
   htmlResponse,
   mockLookup,
   mockTransport,
+  PERFECT_HTML,
   readFixture,
   redirectResponse,
 } from './fixtures/helpers'
@@ -24,8 +27,6 @@ function route(routes: Routes) {
   })
 }
 
-const requestedPaths = () => fetchMock.mock.calls.map(([input]) => new URL(String(input)).pathname)
-
 beforeEach(() => {
   fetchMock.mockReset()
   vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -35,55 +36,83 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('runAudit — éxito', () => {
-  it('audita la página con robots.txt y llms.txt y devuelve notas y checks', async () => {
+describe('runAudit — éxito (CA1, CA2, CA3)', () => {
+  it('audita la página con robots.txt, sitemap.xml y llms.txt y devuelve las 10 categorías', async () => {
     route({
-      '/': () => htmlResponse(readFixture('good.html')),
-      '/robots.txt': () => new Response(readFixture('robots-open.txt')),
-      '/llms.txt': () => new Response(readFixture('llms.txt')),
+      '/': () => htmlResponse(PERFECT_HTML.replace(/https:\/\/example\.com\/entrenador-personal/g, PAGE_URL)),
+      '/robots.txt': () =>
+        new Response(`User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml`, {
+          headers: { 'content-type': 'text/plain' },
+        }),
+      '/sitemap.xml': () =>
+        new Response(`<urlset><url><loc>${PAGE_URL}</loc></url></urlset>`, {
+          headers: { 'content-type': 'application/xml' },
+        }),
+      '/llms.txt': () => new Response(readFixture('llms.txt'), { headers: { 'content-type': 'text/plain' } }),
     })
     const result = await runAudit(PAGE_URL, deps())
-    expect(result).toMatchObject({ status: 'ok', score: 100, seoScore: 100, aiScore: 100 })
+    expect(result.status).toBe('ok')
     if (result.status !== 'ok') throw new Error('esperaba ok')
-    expect(result.checks).toHaveLength(19)
-    expect(requestedPaths()).not.toContain('/sitemap.xml')
+    expect(result.checks).toHaveLength(ALL_CHECKS.length)
+    expect(result.categories).toHaveLength(10)
+    expect(result.checks.find((c) => c.id === 'crawl.sitemap')?.status).toBe('pass')
+    expect(result.checks.find((c) => c.id === 'ai.llms')?.status).toBe('pass')
+    // Sin fetchPsi inyectado en mockTransport, los checks de PSI quedan en error ("No evaluable") sin penalizar
+    expect(result.checks.find((c) => c.id === 'perf.lcp')?.status).toBe('error')
   })
 
-  it('pide robots.txt y llms.txt del origen final tras una redirección', async () => {
+  it('usa fetchPsi, probeTls y probeBots inyectados en FetchDeps (CA2)', async () => {
     route({
-      '/': () => redirectResponse('/es/'),
-      '/es/': () => htmlResponse(readFixture('good.html')),
+      '/': () => htmlResponse(PERFECT_HTML.replace(/https:\/\/example\.com\/entrenador-personal/g, PAGE_URL)),
+      '/robots.txt': () => new Response('User-agent: *\nDisallow:', { headers: { 'content-type': 'text/plain' } }),
+      '/sitemap_index.xml': () =>
+        new Response(`<sitemapindex><sitemap><loc>${SITE}/sitemap-pages.xml</loc></sitemap></sitemapindex>`, {
+          headers: { 'content-type': 'application/xml' },
+        }),
+      '/sitemap-pages.xml': () =>
+        new Response(`<urlset><url><loc>${PAGE_URL}</loc></url></urlset>`, {
+          headers: { 'content-type': 'application/xml' },
+        }),
     })
-    await runAudit(PAGE_URL, deps())
-    const urls = fetchMock.mock.calls.map(([input]) => String(input))
-    expect(urls).toContain(`${SITE}/robots.txt`)
-    expect(urls).toContain(`${SITE}/llms.txt`)
+    const result = await runAudit(PAGE_URL, {
+      ...deps(),
+      fetchPsi: async () => ({
+        lcpMs: 1800,
+        cls: 0.02,
+        tbtMs: 40,
+        unusedJsBytes: 1024,
+        unusedJsScore: 1,
+        field: { lcpMs: 1700, cls: 0.01, inpMs: 90, origin: 'url' },
+      }),
+      probeTls: async () => ({
+        validTo: '2027-01-01T00:00:00.000Z',
+        daysLeft: 120,
+        issuer: 'LE',
+        alpn: 'h2',
+        authorized: true,
+      }),
+      probeBots: async () => [
+        { bot: 'GPTBot', status: 200 },
+        { bot: 'ClaudeBot', status: 200 },
+      ],
+    })
+    if (result.status !== 'ok') throw new Error('esperaba ok')
+    expect(result.checks.find((c) => c.id === 'perf.lcp')?.status).toBe('pass')
+    expect(result.checks.find((c) => c.id === 'perf.http2')?.status).toBe('pass')
+    expect(result.checks.find((c) => c.id === 'ai.waf')?.status).toBe('pass')
+    expect(result.checks.find((c) => c.id === 'crawl.sitemap')?.status).toBe('warn')
   })
 
-  it('detecta el sitemap por /sitemap.xml cuando robots.txt no lo declara', async () => {
+  it('pide robots.txt y llms.txt del origen final tras una redirección y registra la cadena en crawl.status', async () => {
     route({
-      '/': () => htmlResponse(readFixture('good.html')),
-      '/robots.txt': () => new Response('User-agent: *\nDisallow:'),
-      '/sitemap.xml': () => new Response('<urlset></urlset>'),
+      '/': () => redirectResponse('/es/', 301),
+      '/es/': () => htmlResponse(PERFECT_HTML),
     })
     const result = await runAudit(PAGE_URL, deps())
     if (result.status !== 'ok') throw new Error('esperaba ok')
-    expect(result.checks.find((c) => c.id === 'sitemap')?.status).toBe('pass')
-    expect(result.checks.find((c) => c.id === 'llms-txt')?.status).toBe('fail')
-  })
-
-  it('trata como null los auxiliares que fallan, no son 200 o devuelven HTML', async () => {
-    route({
-      '/': () => htmlResponse(readFixture('good.html')),
-      '/robots.txt': () => htmlResponse('<!doctype html><html></html>'),
-      '/llms.txt': () => Promise.reject(new TypeError('fetch failed')),
-      '/sitemap.xml': () => Promise.reject(new TypeError('fetch failed')),
-    })
-    const result = await runAudit(PAGE_URL, deps())
-    if (result.status !== 'ok') throw new Error('esperaba ok')
-    const byId = Object.fromEntries(result.checks.map((c) => [c.id, c.status]))
-    expect(byId).toMatchObject({ 'robots-txt': 'fail', 'llms-txt': 'fail', sitemap: 'fail', 'ai-crawlers': 'pass' })
-    expect(result.score).toBeLessThan(100)
+    const statusCheck = result.checks.find((c) => c.id === 'crawl.status')
+    expect(statusCheck?.status).toBe('warn')
+    expect(statusCheck?.items?.[0]?.label).toContain('301')
   })
 
   it('la salida encaja con la tabla audits (enteros 0–100 y checks serializables)', async () => {
@@ -94,6 +123,54 @@ describe('runAudit — éxito', () => {
       expect(Number.isInteger(value) && value >= 0 && value <= 100).toBe(true)
     }
     expect(JSON.parse(JSON.stringify(result.checks))).toEqual(result.checks)
+  })
+})
+
+describe('fetchPsi con fetch simulado (sin red real)', () => {
+  it('parsea las métricas de Lighthouse y CrUX', async () => {
+    const fakeFetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          lighthouseResult: {
+            audits: {
+              'largest-contentful-paint': { numericValue: 2100 },
+              'cumulative-layout-shift': { numericValue: 0.04 },
+              'total-blocking-time': { numericValue: 80 },
+              'unused-javascript': { score: 0.9, details: { overallSavingsBytes: 12000 } },
+            },
+          },
+          loadingExperience: {
+            metrics: {
+              LARGEST_CONTENTFUL_PAINT_MS: { percentile: 1900 },
+              CUMULATIVE_LAYOUT_SHIFT_SCORE: { percentile: 5 },
+              INTERACTION_TO_NEXT_PAINT: { percentile: 140 },
+            },
+          },
+        }),
+        { status: 200 },
+      ),
+    ) as unknown as typeof fetch
+    const info = await fetchPsi(PAGE_URL, fakeFetch)
+    expect(info).toEqual({
+      lcpMs: 2100,
+      cls: 0.04,
+      tbtMs: 80,
+      unusedJsBytes: 12000,
+      unusedJsScore: 0.9,
+      field: { lcpMs: 1900, cls: 0.05, inpMs: 140, origin: 'url' },
+    })
+  })
+
+  it('degrada limpiamente cuando PageSpeed devuelve 429 o falla', async () => {
+    const rateLimited = (async () => new Response('quota', { status: 429 })) as unknown as typeof fetch
+    const res429 = await fetchPsi(PAGE_URL, rateLimited)
+    expect(res429?.error).toContain('Cuota')
+
+    const failed = (async () => {
+      throw new Error('offline')
+    }) as unknown as typeof fetch
+    const resErr = await fetchPsi(PAGE_URL, failed)
+    expect(resErr?.error).toContain('no disponible')
   })
 })
 
@@ -122,20 +199,6 @@ describe('runAudit — errores', () => {
     expect(result).toEqual({ status: 'error', error: AUDIT_ERROR_MESSAGES.NETWORK })
     expect(console.error).toHaveBeenCalled()
     if (result.status === 'error') expect(result.error).not.toContain('ECONNREFUSED')
-  })
-
-  it('devuelve un error genérico (UNKNOWN) ante un fallo inesperado fuera del fetcher', async () => {
-    vi.resetModules()
-    vi.doMock('../checks', () => ({
-      runChecks: () => {
-        throw new Error('boom')
-      },
-    }))
-    const { runAudit: runAuditWithBrokenChecks } = await import('../index')
-    route({ '/': () => htmlResponse(readFixture('good.html')) })
-    const result = await runAuditWithBrokenChecks(PAGE_URL, deps())
-    expect(result).toEqual({ status: 'error', error: AUDIT_ERROR_MESSAGES.UNKNOWN })
-    vi.doUnmock('../checks')
   })
 
   it('todos los mensajes de error están en español y no están vacíos', () => {

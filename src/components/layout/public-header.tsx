@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { BrandLink } from './brand-link'
+import { ThemeToggle } from './theme-toggle'
 
-/** Header of the public pages (landing, auth, not-found): wordmark to `/` and optional links. */
+/** Header of the public pages (landing, auth, not-found): wordmark to `/`, optional links and theme toggle. */
 export function PublicHeader({ children, className = 'max-w-landing' }: { children?: ReactNode; className?: string }) {
   return (
     <header className="w-full border-b border-line">
@@ -13,7 +14,10 @@ export function PublicHeader({ children, className = 'max-w-landing' }: { childr
         )}
       >
         <BrandLink href="/" />
-        {children}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          {children}
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )

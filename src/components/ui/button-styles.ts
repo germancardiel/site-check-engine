@@ -7,8 +7,9 @@ const BASE =
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-accent text-on-accent hover:bg-accent-hover active:bg-accent disabled:bg-accent',
-  secondary: 'border border-line-strong bg-transparent text-ink hover:border-ink hover:bg-panel disabled:hover:border-line-strong',
-  danger: 'border border-fail bg-transparent text-ink hover:bg-panel',
+  secondary:
+    'border border-line-strong bg-transparent text-ink hover:border-ink hover:bg-panel disabled:text-ink-muted disabled:hover:border-line-strong disabled:hover:bg-transparent',
+  danger: 'border border-fail bg-transparent text-ink hover:bg-panel disabled:text-ink-muted disabled:hover:bg-transparent',
   quiet: 'px-2 text-ink-muted underline decoration-line-strong hover:text-ink hover:decoration-ink',
 }
 

@@ -19,14 +19,15 @@
   --color-ink-muted: #B4B2AD;
   --color-line: rgb(245 242 235 / 18%);
   --color-line-strong: rgb(245 242 235 / 40%);
-  --color-accent: #EE671B;
-  --color-accent-hover: #F2884A;
+  --color-accent: #14B8C4;
+  --color-accent-hover: #38D0DC;
   --color-on-accent: #151519;
-  --color-accent-text: #EE671B;
-  --color-focus: #EE671B;
+  --color-accent-text: #14B8C4;
+  --color-focus: #14B8C4;
   --color-pass: #3FB27F;
   --color-warn: #F2C14E;
-  --color-fail: #E5484D;
+  --color-fail: #F06064;
+  --color-glow-secondary: #6B4FD8;
 
   --container-landing: 1320px;
   --container-app: 1080px;
@@ -45,15 +46,55 @@
     --color-ink-muted: #5C5A55;
     --color-line: rgb(21 21 25 / 14%);
     --color-line-strong: rgb(21 21 25 / 50%);
-    --color-accent: #EE671B;
-    --color-accent-hover: #F2884A;
+    --color-accent: #14B8C4;
+    --color-accent-hover: #38D0DC;
     --color-on-accent: #151519;
-    --color-accent-text: #A93F08;
-    --color-focus: #A93F08;
+    --color-accent-text: #0A6670;
+    --color-focus: #0A6670;
     --color-pass: #1E7A4C;
     --color-warn: #8A6500;
     --color-fail: #C2342F;
+    --color-glow-secondary: #6B4FD8;
   }
+}
+
+/* Explicit theme override via <html data-theme="light|dark">. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-ground: #F5F2EB;
+  --color-panel: #FAF8F4;
+  --color-ink: #151519;
+  --color-ink-muted: #5C5A55;
+  --color-line: rgb(21 21 25 / 14%);
+  --color-line-strong: rgb(21 21 25 / 50%);
+  --color-accent: #14B8C4;
+  --color-accent-hover: #38D0DC;
+  --color-on-accent: #151519;
+  --color-accent-text: #0A6670;
+  --color-focus: #0A6670;
+  --color-pass: #1E7A4C;
+  --color-warn: #8A6500;
+  --color-fail: #C2342F;
+  --color-glow-secondary: #6B4FD8;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ground: #151519;
+  --color-panel: #1D1D22;
+  --color-ink: #F5F2EB;
+  --color-ink-muted: #B4B2AD;
+  --color-line: rgb(245 242 235 / 18%);
+  --color-line-strong: rgb(245 242 235 / 40%);
+  --color-accent: #14B8C4;
+  --color-accent-hover: #38D0DC;
+  --color-on-accent: #151519;
+  --color-accent-text: #14B8C4;
+  --color-focus: #14B8C4;
+  --color-pass: #3FB27F;
+  --color-warn: #F2C14E;
+  --color-fail: #F06064;
+  --color-glow-secondary: #6B4FD8;
 }
 
 @layer base {
@@ -106,20 +147,27 @@
 
 /* Landing: the sample report resolves check by check, once, on load. */
 @keyframes specimen-out {
-  to {
-    opacity: 0;
-  }
+  to { opacity: 0; }
 }
-
 @keyframes specimen-in {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes glowDriftA {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-14vw, 22vh, 0) scale(1.15); }
+}
+@keyframes glowDriftB {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(18vw, -20vh, 0) scale(1.12); }
+}
+@keyframes waveTravel {
+  from { transform: translate3d(0, -30vh, 0); }
+  to { transform: translate3d(0, 110vh, 0); }
+}
+@keyframes waveSlide {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
 }
 
 @layer components {
@@ -133,13 +181,105 @@
     animation-delay: calc(var(--step, 0) * 110ms + 500ms);
   }
 
+  /* Ambient backdrop (CA11): accent + violet blurs and a travelling accent wave behind content. */
+  .ambient-glow {
+    --glow-blend: screen;
+    --glow-a-opacity: 0.22;
+    --glow-b-opacity: 0.18;
+    --glow-a-mobile: 0.3;
+    --glow-b-mobile: 0.26;
+    --wave-band-opacity: 0.16;
+    --wave-line-opacity: 0.4;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    mix-blend-mode: var(--glow-blend);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .ambient-glow {
+      --glow-blend: normal;
+      --glow-a-opacity: 0.11;
+      --glow-b-opacity: 0.09;
+      --glow-a-mobile: 0.16;
+      --glow-b-mobile: 0.14;
+      --wave-band-opacity: 0.09;
+      --wave-line-opacity: 0.22;
+    }
+  }
+
+  :root[data-theme="light"] .ambient-glow {
+    --glow-blend: normal;
+    --glow-a-opacity: 0.11;
+    --glow-b-opacity: 0.09;
+    --glow-a-mobile: 0.16;
+    --glow-b-mobile: 0.14;
+    --wave-band-opacity: 0.09;
+    --wave-line-opacity: 0.22;
+  }
+
+  .ambient-glow span {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(120px);
+    will-change: transform;
+  }
+
+  .ambient-glow .glow-a {
+    width: 46vw; height: 46vw; top: -12vw; right: -10vw;
+    background: var(--color-accent);
+    opacity: var(--glow-a-opacity);
+    animation: glowDriftA 38s ease-in-out infinite alternate;
+  }
+
+  .ambient-glow .glow-b {
+    width: 40vw; height: 40vw; bottom: -14vw; left: -12vw;
+    background: var(--color-glow-secondary);
+    opacity: var(--glow-b-opacity);
+    animation: glowDriftB 46s ease-in-out infinite alternate;
+  }
+
+  .ambient-glow .glow-wave {
+    position: absolute; top: 0; left: 0; width: 100%; height: 22vh; min-height: 140px;
+    animation: waveTravel 26s linear infinite;
+    will-change: transform;
+  }
+
+  .ambient-glow .glow-wave svg {
+    display: block; width: 200%; height: 100%; overflow: visible;
+    animation: waveSlide 12s linear infinite;
+    filter: blur(18px);
+    will-change: transform;
+  }
+
+  .ambient-glow .glow-wave path {
+    fill: none; stroke: var(--color-accent); vector-effect: non-scaling-stroke;
+  }
+  .ambient-glow .glow-wave .wave-band { stroke-width: 90px; opacity: var(--wave-band-opacity); }
+  .ambient-glow .glow-wave .wave-line { stroke-width: 10px; opacity: var(--wave-line-opacity); }
+
+  @media (max-width: 767px) {
+    .ambient-glow span { filter: blur(70px); }
+    .ambient-glow .glow-a { width: 95vw; height: 95vw; top: -30vw; right: -40vw; opacity: var(--glow-a-mobile); }
+    .ambient-glow .glow-b { width: 85vw; height: 85vw; bottom: -30vw; left: -40vw; opacity: var(--glow-b-mobile); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .specimen-pending {
       display: none;
     }
-
     .specimen-resolved {
       animation: none;
+    }
+    .ambient-glow span {
+      animation: none;
+    }
+    .ambient-glow .glow-wave,
+    .ambient-glow .glow-wave svg {
+      animation: none;
+      display: none;
     }
   }
 }

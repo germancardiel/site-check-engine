@@ -23,6 +23,7 @@ export default function Home() {
       <LandingHeader />
       <main id="contenido" className="flex flex-1 flex-col">
         <script type="application/ld+json">{serializeJsonLd(buildWebsiteJsonLd(siteUrl()))}</script>
+        <script>{`if (typeof navigator !== 'undefined' && navigator.modelContext) navigator.modelContext.registerTool({ name: 'site-check-engine' })`}</script>
 
         <section
           className={`${WRAP} grid items-start gap-12 py-12 sm:py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16 lg:py-20`}
@@ -48,7 +49,7 @@ export default function Home() {
                 Qué revisa {SITE_NAME}
               </h2>
               <p className="max-w-2xl text-lg text-ink-muted">
-                Cada auditoría ejecuta {ALL_CHECKS.length} comprobaciones automáticas, agrupadas en dos bloques y
+                Cada auditoría ejecuta {ALL_CHECKS.length} comprobaciones automáticas, agrupadas en 10 apartados y
                 ponderadas según su impacto. Estas son las que verás en tu informe:
               </p>
             </div>

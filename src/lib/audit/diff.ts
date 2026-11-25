@@ -1,7 +1,13 @@
 import type { CheckResult, CheckStatus } from './types'
 
-/** Order used to decide whether a check improved: fail < warn < pass. */
-export const STATUS_RANK: Record<CheckStatus, number> = { fail: 0, warn: 1, pass: 2 }
+/** Order used to decide whether a check improved: fail < warn < pass/na/error. */
+export const STATUS_RANK: Record<CheckStatus, number> = {
+  fail: 0,
+  warn: 1,
+  pass: 2,
+  na: 2,
+  error: 2,
+}
 
 type DiffableCheck = Pick<CheckResult, 'id' | 'category' | 'title' | 'status'>
 

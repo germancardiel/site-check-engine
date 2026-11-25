@@ -41,7 +41,13 @@ export const CHANGES_INSTRUCTIONS = [
   SHARED_RULES,
 ].join('\n')
 
-const STATUS_TEXT: Record<CheckStatus, string> = { fail: 'falla', warn: 'mejorable', pass: 'correcto' }
+const STATUS_TEXT: Record<CheckStatus, string> = {
+  fail: 'falla',
+  warn: 'mejorable',
+  pass: 'correcto',
+  na: 'no aplica',
+  error: 'no evaluable',
+}
 
 /** Collapses whitespace and cuts the text to `max` characters (with an ellipsis). */
 export function clip(text: string, max = FIELD_MAX_CHARS): string {
