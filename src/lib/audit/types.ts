@@ -1,4 +1,5 @@
 import type { CheerioAPI } from 'cheerio'
+import type { LookupFunction } from 'node:net'
 
 export type CheckStatus = 'pass' | 'warn' | 'fail'
 export type CheckCategory = 'seo' | 'ai'
@@ -39,10 +40,20 @@ export type AuditOutcome =
 
 export type LookupAddress = { address: string; family: number }
 export type LookupFn = (hostname: string, options: { all: true }) => Promise<LookupAddress[]>
-export type FetchFn = typeof fetch
+
+/** What `safeFetch` hands to the transport for one hop. */
+export type TransportInit = {
+  headers: Record<string, string>
+  signal: AbortSignal
+  /** Validating Node `lookup`: the only way the transport may resolve the hostname. */
+  lookup: LookupFunction
+}
+
+/** Performs a single request without following redirects. Replaces `fetch` inside `safeFetch`. */
+export type Transport = (url: string, init: TransportInit) => Promise<Response>
 
 export type FetchDeps = {
-  fetch?: FetchFn
+  transport?: Transport
   lookup?: LookupFn
 }
 

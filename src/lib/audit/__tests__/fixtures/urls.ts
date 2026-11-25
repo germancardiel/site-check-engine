@@ -8,3 +8,5 @@ export const PUBLIC_IP = '93.184.216.34'
 
 export const ipUrl = (host: string): string => `http://${host}/`
 export const INTERNAL_SITE = 'https://interno.example/'
+export const IP_HTTPS_URL = `https://${PUBLIC_IP}/`
+export const PORT_HTTPS_URL = 'https://example.com:8443/ruta?q=1'

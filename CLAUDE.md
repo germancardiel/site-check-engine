@@ -86,7 +86,7 @@ Archivos esperados, decisiones ya tomadas.
 | T11 | Cambiar el modelo de IA al plan gratuito (`recursive/flint-v1.0`) | hecho (ronda 1) |
 | T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | hecho (ronda 1) |
 | T12 | Corrección: lectura de sesión durante el prerender (cabecera) | hecho (ronda 1) |
-| T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | pendiente |
+| T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | hecho (ronda 1) |
 | T08 | Producción, usuario demo y README | pendiente |
 
 Actualiza el estado (`pendiente` → `en curso` → `hecho (ronda N)`) al cerrar cada tarea.

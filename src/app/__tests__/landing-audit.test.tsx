@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 // Method (CA2): the landing is rendered with its real components (root layout + page) and the
 // `<head>` is generated from the same `metadata`/`viewport` exports Next uses. robots.txt,
 // sitemap.xml and llms.txt come from the real route modules. Everything is served through a
-// mocked `fetch` + DNS lookup to `runAudit`, the same entry point the app uses (no network).
+// mocked socket transport + DNS lookup to `runAudit`, the same entry point the app uses (no network).
 
 const env = vi.hoisted(() => {
   const previous = process.env.NEXT_PUBLIC_SITE_URL
@@ -42,7 +42,7 @@ import robots from '@/app/robots'
 import sitemap from '@/app/sitemap'
 import { SessionCtas } from '@/components/landing/session-ctas'
 import { runAudit } from '@/lib/audit'
-import { mockLookup } from '@/lib/audit/__tests__/fixtures/helpers'
+import { type TransportHandler, mockLookup, mockTransport } from '@/lib/audit/__tests__/fixtures/helpers'
 import { parseHtml } from '@/lib/audit/parse'
 
 const BASE = 'http://faro.test'
@@ -86,7 +86,7 @@ function renderLanding(): string {
   return `<!DOCTYPE html>${document.replace('<body', `${renderHead()}<body`)}`
 }
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = vi.fn<TransportHandler>()
 
 async function serve(): Promise<Record<string, string>> {
   return {
@@ -106,11 +106,9 @@ beforeEach(async () => {
     const type = pathname === '/' ? 'text/html' : 'text/plain'
     return new Response(body, { status: 200, headers: { 'content-type': type } })
   })
-  vi.stubGlobal('fetch', fetchMock)
 })
 
 afterEach(() => {
-  vi.unstubAllGlobals()
   vi.restoreAllMocks()
   session.user = null
   session.fail = false
@@ -124,7 +122,7 @@ afterAll(() => {
 
 describe('la landing aprueba el motor de Faro', () => {
   it('todos los checks dan pass salvo https (en local se sirve por HTTP)', async () => {
-    const result = await runAudit(`${BASE}/`, { lookup: mockLookup() })
+    const result = await runAudit(`${BASE}/`, { lookup: mockLookup(), transport: mockTransport(fetchMock) })
     if (result.status !== 'ok') throw new Error(`La auditoría falló: ${result.error}`)
     const notPassing = result.checks.filter((check) => check.status !== 'pass').map((check) => check.id)
     expect(notPassing).toEqual(['https'])

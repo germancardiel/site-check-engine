@@ -32,7 +32,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-TEST-01 | B | Toda lógica nueva en `src/lib/` tiene tests en `__tests__/` junto a ella. Exentos: archivos que solo declaran tipos | Cada `.ts` nuevo de `lib/` con lógica tiene su `.test.ts`, o lo cubre un test del módulo (p. ej. `checks.test.ts` para `checks/*.ts`) con 100 % de líneas de ese archivo |
 | D-TEST-02 | M | Cobertura de líneas de `src/lib/audit/**` de 80 % o más | `npm run test:coverage` |
 | D-TEST-03 | M | Cada check de auditoría tiene al menos un test `pass` y uno `fail` con HTML de fixture | Lectura de `checks.test.ts` |
-| D-TEST-04 | B | Los tests NO hacen peticiones de red reales (se usan mocks de `fetch`/DNS) | Tests pasan sin red; `grep -rn "https://" src/**/__tests__` solo en fixtures |
+| D-TEST-04 | B | Los tests NO hacen peticiones de red reales: el DNS y el transporte se inyectan (`mockTransport` de `src/lib/audit/__tests__/fixtures/helpers.ts`, o mock de `@/lib/audit`); `vi.stubGlobal('fetch')` no aísla el motor. Se permite un servidor local efímero en `127.0.0.1` levantado por el propio test, con resolución simulada | Tests pasan sin red; `grep -rn "https://" src/**/__tests__` solo en fixtures |
 | D-TEST-05 | M | Cada criterio de aceptación de la tarea tiene un test o un paso manual documentado en el informe | Cruce CA ↔ tests |
 
 ## 3. Seguridad (SEC)
@@ -42,7 +42,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-SEC-02 | B | Todas las tablas tienen RLS activado y políticas `user_id = auth.uid()` | Lectura de `supabase/migrations/*.sql` |
 | D-SEC-03 | B | `SUPABASE_SERVICE_ROLE_KEY` nunca se importa desde código cliente ni de usuario; solo en `scripts/` | `grep -rn SERVICE_ROLE src` → vacío |
 | D-SEC-04 | B | Todo input de server actions y route handlers se valida con zod antes de usarse | Cada action/route llama `.safeParse` o `.parse` al inicio |
-| D-SEC-05 | B | Protección SSRF en el fetcher: solo `http`/`https`, rechaza IPs privadas, loopback, link-local y `localhost` **tras resolver el DNS**, máximo 5 redirecciones (revalidadas), timeout de 10 s y máximo 3 MB | Tests de `fetcher.test.ts` cubren `127.0.0.1`, `10.x`, `169.254.169.254`, `::1`, `localhost`, redirección a IP privada |
+| D-SEC-05 | B | Protección SSRF en el fetcher: solo `http`/`https`, rechaza IPs privadas, loopback, link-local y `localhost` **tras resolver el DNS**, máximo 5 redirecciones (revalidadas), timeout de 10 s y máximo 3 MB. La IP validada es la que usa el socket: una sola resolución por salto, mediante un `lookup` propio que valida antes de conectar (sin segunda resolución por parte de `fetch`) y TLS contra el hostname | Tests de `fetcher.test.ts` cubren `127.0.0.1`, `10.x`, `169.254.169.254`, `::1`, `localhost`, redirección a IP privada, rebinding (1.ª resolución pública y 2.ª privada) y dirección entregada al socket |
 | D-SEC-06 | B | Cada acción de servidor comprueba la sesión (`auth.getUser()`) y opera solo sobre los datos de ese usuario. Exentas: las actions que crean la sesión (login, registro) | Lectura de las actions |
 | D-SEC-07 | M | El HTML auditado nunca se renderiza con `dangerouslySetInnerHTML` | `grep -rn dangerouslySetInnerHTML src` → vacío |
 | D-SEC-08 | M | Los errores al usuario son genéricos; el detalle solo en `console.error` del servidor | Lectura de los `catch` |

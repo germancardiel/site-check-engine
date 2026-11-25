@@ -1,32 +1,19 @@
-import { lookup as dnsLookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
+import { AuditFetchError } from './errors'
 import { isBlockedIp, isLocalHostname } from './ip'
-import type { FetchFn, LookupFn, SafeFetchOptions, SafeFetchResult } from './types'
+import { createSafeLookup, defaultLookup } from './safe-lookup'
+import { nodeTransport } from './transport'
+import type { SafeFetchOptions, SafeFetchResult } from './types'
+
+export { AuditFetchError, type AuditFetchErrorCode } from './errors'
+export { resolvePublicAddresses } from './safe-lookup'
 
 export const USER_AGENT = 'FaroBot/1.0 (+https://faro.app)'
 export const DEFAULT_TIMEOUT_MS = 10_000
 export const DEFAULT_MAX_BYTES = 3 * 1024 * 1024
 export const DEFAULT_MAX_REDIRECTS = 5
 
-export type AuditFetchErrorCode =
-  | 'INVALID_URL'
-  | 'BLOCKED_HOST'
-  | 'TOO_MANY_REDIRECTS'
-  | 'TIMEOUT'
-  | 'TOO_LARGE'
-  | 'NETWORK'
-
-export class AuditFetchError extends Error {
-  readonly code: AuditFetchErrorCode
-
-  constructor(code: AuditFetchErrorCode, message: string, options?: { cause?: unknown }) {
-    super(message, options)
-    this.name = 'AuditFetchError'
-    this.code = code
-  }
-}
-
-const defaultLookup: LookupFn = (hostname, options) => dnsLookup(hostname, options)
+type ResolvedOptions = Required<SafeFetchOptions>
 
 function parseHttpUrl(raw: string): URL {
   let url: URL
@@ -41,28 +28,17 @@ function parseHttpUrl(raw: string): URL {
   return url
 }
 
-/** Validates the host of `url` against the SSRF rules, using the resolved IPs. */
-export async function assertPublicHost(url: URL, lookup: LookupFn = defaultLookup): Promise<void> {
+/**
+ * Static SSRF checks for the host of `url` (D-SEC-05): `localhost` and blocked IP literals.
+ * Hostnames are resolved and validated later, once, by the socket's `lookup` (no TOCTOU).
+ */
+export function assertPublicHost(url: URL): void {
   const hostname = url.hostname.replace(/^\[|\]$/g, '')
   if (!hostname || isLocalHostname(hostname)) {
     throw new AuditFetchError('BLOCKED_HOST', `Blocked host: ${hostname}`)
   }
-  if (isIP(hostname)) {
-    if (isBlockedIp(hostname)) throw new AuditFetchError('BLOCKED_HOST', `Blocked IP: ${hostname}`)
-    return
-  }
-  let addresses: { address: string }[]
-  try {
-    addresses = await lookup(hostname, { all: true })
-  } catch (cause) {
-    throw new AuditFetchError('NETWORK', `DNS lookup failed: ${hostname}`, { cause })
-  }
-  if (addresses.length === 0) {
-    throw new AuditFetchError('NETWORK', `DNS returned no addresses: ${hostname}`)
-  }
-  const blocked = addresses.find(({ address }) => isBlockedIp(address))
-  if (blocked) {
-    throw new AuditFetchError('BLOCKED_HOST', `${hostname} resolves to blocked IP ${blocked.address}`)
+  if (isIP(hostname) && isBlockedIp(hostname)) {
+    throw new AuditFetchError('BLOCKED_HOST', `Blocked IP: ${hostname}`)
   }
 }
 
@@ -94,14 +70,15 @@ function isRedirect(response: Response): boolean {
   return response.status >= 300 && response.status < 400 && response.headers.has('location')
 }
 
-async function request(fetchFn: FetchFn, url: URL, signal: AbortSignal): Promise<Response> {
+async function request(options: ResolvedOptions, url: URL, signal: AbortSignal): Promise<Response> {
   try {
-    return await fetchFn(url.toString(), {
-      redirect: 'manual',
+    return await options.transport(url.toString(), {
       signal,
+      lookup: createSafeLookup(options.lookup),
       headers: { 'user-agent': USER_AGENT, accept: 'text/html,text/plain;q=0.9,*/*;q=0.8' },
     })
   } catch (cause) {
+    if (cause instanceof AuditFetchError) throw cause
     if (signal.aborted) throw new AuditFetchError('TIMEOUT', `Timeout fetching ${url}`, { cause })
     throw new AuditFetchError('NETWORK', `Network error fetching ${url}`, { cause })
   }
@@ -109,14 +86,14 @@ async function request(fetchFn: FetchFn, url: URL, signal: AbortSignal): Promise
 
 async function fetchFollowing(
   start: URL,
-  options: Required<SafeFetchOptions>,
+  options: ResolvedOptions,
   signal: AbortSignal,
 ): Promise<SafeFetchResult> {
   const redirects: string[] = []
   let current = start
   for (;;) {
-    await assertPublicHost(current, options.lookup)
-    const response = await request(options.fetch, current, signal)
+    assertPublicHost(current)
+    const response = await request(options, current, signal)
     if (!isRedirect(response)) {
       const body = await readBody(response, options.maxBytes)
       const headers = Object.fromEntries(response.headers.entries())
@@ -138,13 +115,14 @@ async function fetchFollowing(
 }
 
 /**
- * Fetches a public http(s) URL with SSRF protection (D-SEC-05): the resolved IPs of every
- * hop are validated, redirects are followed manually (max 5), the whole operation has a
- * 10 s timeout and the body is cut at 3 MB.
+ * Fetches a public http(s) URL with SSRF protection (D-SEC-05): every hop is resolved once
+ * by a validating `lookup` and the socket connects only to those validated IPs (TLS against
+ * the hostname); redirects are followed manually (max 5), the whole operation has a 10 s
+ * timeout (DNS and body included) and the body is cut at 3 MB.
  */
 export async function safeFetch(rawUrl: string, opts: SafeFetchOptions = {}): Promise<SafeFetchResult> {
-  const options: Required<SafeFetchOptions> = {
-    fetch: opts.fetch ?? ((input, init) => globalThis.fetch(input, init)),
+  const options: ResolvedOptions = {
+    transport: opts.transport ?? nodeTransport,
     lookup: opts.lookup ?? defaultLookup,
     timeoutMs: opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     maxBytes: opts.maxBytes ?? DEFAULT_MAX_BYTES,
