@@ -4,8 +4,9 @@ import { readSupabaseEnv } from './env'
 import type { Database } from './types'
 
 export async function createClient() {
-  const { url, anonKey } = readSupabaseEnv()
+  // Read the request first so prerendering stops here instead of requiring env at build time.
   const cookieStore = await cookies()
+  const { url, anonKey } = readSupabaseEnv()
 
   return createServerClient<Database>(url, anonKey, {
     cookies: {

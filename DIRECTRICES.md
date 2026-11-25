@@ -42,7 +42,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-SEC-03 | B | `SUPABASE_SERVICE_ROLE_KEY` nunca se importa desde código cliente ni de usuario; solo en `scripts/` | `grep -rn SERVICE_ROLE src` → vacío |
 | D-SEC-04 | B | Todo input de server actions y route handlers se valida con zod antes de usarse | Cada action/route llama `.safeParse` o `.parse` al inicio |
 | D-SEC-05 | B | Protección SSRF en el fetcher: solo `http`/`https`, rechaza IPs privadas, loopback, link-local y `localhost` **tras resolver el DNS**, máximo 5 redirecciones (revalidadas), timeout de 10 s y máximo 3 MB | Tests de `fetcher.test.ts` cubren `127.0.0.1`, `10.x`, `169.254.169.254`, `::1`, `localhost`, redirección a IP privada |
-| D-SEC-06 | B | Cada acción de servidor comprueba la sesión (`auth.getUser()`) y opera solo sobre los datos de ese usuario | Lectura de las actions |
+| D-SEC-06 | B | Cada acción de servidor comprueba la sesión (`auth.getUser()`) y opera solo sobre los datos de ese usuario. Exentas: las actions que crean la sesión (login, registro) | Lectura de las actions |
 | D-SEC-07 | M | El HTML auditado nunca se renderiza con `dangerouslySetInnerHTML` | `grep -rn dangerouslySetInnerHTML src` → vacío |
 | D-SEC-08 | M | Los errores al usuario son genéricos; el detalle solo en `console.error` del servidor | Lectura de los `catch` |
 

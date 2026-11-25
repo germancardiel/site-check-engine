@@ -74,4 +74,11 @@ describe('createClient (servidor)', () => {
     await expect(createClient()).rejects.toThrow(/NEXT_PUBLIC_SUPABASE_URL/)
     expect(createServerClient).not.toHaveBeenCalled()
   })
+
+  it('lee las cookies antes que el entorno para no exigir variables al prerenderizar', async () => {
+    const headers = await import('next/headers')
+    vi.mocked(headers.cookies).mockRejectedValueOnce(new Error('dynamic-usage'))
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '')
+    await expect(createClient()).rejects.toThrow('dynamic-usage')
+  })
 })
