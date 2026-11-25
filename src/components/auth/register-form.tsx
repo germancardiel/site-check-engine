@@ -13,7 +13,7 @@ export function RegisterForm() {
   const [state, formAction] = useActionState(register, INITIAL_STATE)
 
   return (
-    <form action={formAction} className="flex flex-col gap-4" noValidate>
+    <form action={formAction} className="flex flex-col gap-5" noValidate>
       <TextField id="email" name="email" type="email" label="Email" autoComplete="email" required />
       <TextField
         id="password"
@@ -26,7 +26,9 @@ export function RegisterForm() {
         required
       />
       <FormFeedback error={state.error} message={state.message} />
-      <SubmitButton pendingLabel="Creando cuenta…">Crear cuenta</SubmitButton>
+      <SubmitButton pendingLabel="Creando cuenta…" className="w-full">
+        Crear cuenta
+      </SubmitButton>
     </form>
   )
 }

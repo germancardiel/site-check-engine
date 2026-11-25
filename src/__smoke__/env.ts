@@ -11,7 +11,7 @@ function read(name: string): string | undefined {
   return value ? value : undefined
 }
 
-/** `SMOKE_BASE_URL` is mandatory: the origin of the Faro instance under test, without a trailing slash. */
+/** `SMOKE_BASE_URL` is mandatory: the origin of the Site Check Engine instance under test, without a trailing slash. */
 export function smokeBaseUrl(): string {
   const raw = read('SMOKE_BASE_URL')
   if (!raw) {

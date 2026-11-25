@@ -17,3 +17,7 @@ supabase/.temp/
 # sistema / editor
 .DS_Store
 .claude/settings.local.json
+
+# capturas de revisión de diseño (pueden mostrar datos del usuario demo)
+.impeccable/review/
+.impeccable/build/

@@ -13,7 +13,7 @@ export function LoginForm() {
   const [state, formAction] = useActionState(login, INITIAL_STATE)
 
   return (
-    <form action={formAction} className="flex flex-col gap-4" noValidate>
+    <form action={formAction} className="flex flex-col gap-5" noValidate>
       <TextField id="email" name="email" type="email" label="Email" autoComplete="email" required />
       <TextField
         id="password"
@@ -24,7 +24,9 @@ export function LoginForm() {
         required
       />
       <FormFeedback error={state.error} />
-      <SubmitButton pendingLabel="Entrando…">Entrar</SubmitButton>
+      <SubmitButton pendingLabel="Entrando…" className="w-full">
+        Entrar
+      </SubmitButton>
     </form>
   )
 }

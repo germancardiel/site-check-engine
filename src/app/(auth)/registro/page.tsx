@@ -1,25 +1,20 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { AuthCard } from '@/components/auth/auth-card'
 import { RegisterForm } from '@/components/auth/register-form'
+import { SITE_NAME } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'Crear cuenta · Faro',
+  title: `Crear cuenta · ${SITE_NAME}`,
 }
 
 export default function RegisterPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Crear cuenta</h1>
+    <AuthCard
+      title="Crear cuenta"
+      intro="Es gratis y solo necesitas un email. Después podrás añadir tu primer sitio y auditarlo."
+      alternate={{ question: '¿Ya tienes cuenta?', href: '/login', label: 'Entrar' }}
+    >
       <RegisterForm />
-      <p className="text-sm text-zinc-700 dark:text-zinc-300">
-        ¿Ya tienes cuenta?{' '}
-        <Link
-          href="/login"
-          className="font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          Entrar
-        </Link>
-      </p>
-    </div>
+    </AuthCard>
   )
 }

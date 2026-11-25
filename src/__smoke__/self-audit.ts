@@ -5,11 +5,11 @@ import type { FetchDeps, Transport } from '@/lib/audit'
 
 /**
  * Public-looking hostname used to self-audit a local instance. The SSRF guard (D-SEC-05)
- * rightly refuses `localhost`, so locally Faro is audited as `http://faro-smoke.test:<port>`
+ * rightly refuses `localhost`, so locally Site Check Engine is audited as `http://sce-smoke.test:<port>`
  * and only that exact origin is sent to the loopback server. Build with
- * `NEXT_PUBLIC_SITE_URL=http://faro-smoke.test:<port>` so the canonical URL matches it.
+ * `NEXT_PUBLIC_SITE_URL=http://sce-smoke.test:<port>` so the canonical URL matches it.
  */
-export const LOCAL_AUDIT_HOST = 'faro-smoke.test'
+export const LOCAL_AUDIT_HOST = 'sce-smoke.test'
 
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', '[::1]'])
 
@@ -20,7 +20,7 @@ export function isLoopbackOrigin(origin: string): boolean {
 
 /**
  * Real Node transport; requests to the alias origin are rewritten to the local base URL
- * and resolved by the system DNS. Every other host keeps Faro's validating lookup.
+ * and resolved by the system DNS. Every other host keeps Site Check Engine's validating lookup.
  */
 function aliasTransport(aliasOrigin: string, baseOrigin: string): Transport {
   return (rawUrl, init) => {

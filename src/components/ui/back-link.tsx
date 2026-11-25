@@ -6,10 +6,21 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
   return (
     <Link
       href={href}
-      className="self-start rounded-sm text-sm font-medium text-zinc-900 underline underline-offset-4 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-100 dark:hover:text-zinc-300 dark:focus-visible:outline-white"
+      className="group inline-flex items-center gap-1.5 self-start rounded-sm text-sm font-medium text-ink-muted transition-colors duration-200 ease-out hover:text-ink"
     >
-      <span aria-hidden="true">← </span>
-      {children}
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-4 transition-transform duration-200 ease-out group-hover:-translate-x-0.5"
+      >
+        <path d="M12.5 8h-9M7 4.5 3.5 8 7 11.5" />
+      </svg>
+      <span className="underline decoration-line-strong group-hover:decoration-ink">{children}</span>
     </Link>
   )
 }

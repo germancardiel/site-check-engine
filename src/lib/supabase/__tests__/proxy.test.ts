@@ -38,7 +38,7 @@ import { PRIVATE_PREFIXES, getAuthRedirect, updateSession } from '@/lib/supabase
 
 function request(path: string, cookie?: string): NextRequest {
   const headers = cookie ? { cookie } : undefined
-  return new NextRequest(new URL(path, 'http://faro.test'), { headers })
+  return new NextRequest(new URL(path, 'http://sce.test'), { headers })
 }
 
 describe('getAuthRedirect', () => {
@@ -166,13 +166,13 @@ describe('updateSession', () => {
   it('redirige a /login sin sesión en /sitios', async () => {
     const response = await updateSession(request('/sitios?x=1'))
     expect(response.status).toBe(307)
-    expect(response.headers.get('location')).toBe('http://faro.test/login')
+    expect(response.headers.get('location')).toBe('http://sce.test/login')
   })
 
   it('redirige a /sitios con sesión en /login', async () => {
     state.user = { id: 'u1', email: 'ana@example.com' }
     const response = await updateSession(request('/login'))
-    expect(response.headers.get('location')).toBe('http://faro.test/sitios')
+    expect(response.headers.get('location')).toBe('http://sce.test/sitios')
   })
 
   it('deja pasar con sesión en /sitios', async () => {
@@ -193,7 +193,7 @@ describe('updateSession', () => {
   it('conserva las cookies refrescadas en una redirección', async () => {
     state.refreshed = [{ name: 'sb-token', value: '', options: { path: '/', maxAge: 0 } }]
     const response = await updateSession(request('/sitios', 'sb-token=caducado'))
-    expect(response.headers.get('location')).toBe('http://faro.test/login')
+    expect(response.headers.get('location')).toBe('http://sce.test/login')
     expect(response.cookies.get('sb-token')?.value).toBe('')
     expect(response.headers.get('cache-control')).toBe('private, no-store')
   })

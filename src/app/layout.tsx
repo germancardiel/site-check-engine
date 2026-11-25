@@ -1,19 +1,20 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans, Syne } from 'next/font/google'
 import { SkipLink } from '@/components/layout/skip-link'
+import { THEMES } from '@/lib/design/tokens'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, siteUrl } from '@/lib/site'
 import './globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-})
+const syne = Syne({ variable: '--font-syne', weight: '600', subsets: ['latin'] })
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-})
+const jakarta = Plus_Jakarta_Sans({ variable: '--font-jakarta', weight: ['400', '500', '600'], subsets: ['latin'] })
+
+const fraunces = Fraunces({ variable: '--font-fraunces', weight: '400', style: 'italic', subsets: ['latin'] })
+
+const jetbrains = JetBrains_Mono({ variable: '--font-jetbrains', weight: ['400', '500'], subsets: ['latin'] })
+
+const FONT_VARIABLES = [syne, jakarta, fraunces, jetbrains].map((font) => font.variable).join(' ')
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -32,15 +33,15 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+    { media: '(prefers-color-scheme: light)', color: THEMES.light.ground.hex },
+    { media: '(prefers-color-scheme: dark)', color: THEMES.dark.ground.hex },
   ],
 }
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+    <html lang="es" className={`${FONT_VARIABLES} h-full antialiased`}>
+      <body className="flex min-h-full flex-col bg-ground text-ink">
         <SkipLink />
         {children}
       </body>

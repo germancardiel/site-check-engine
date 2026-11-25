@@ -1,25 +1,20 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { AuthCard } from '@/components/auth/auth-card'
 import { LoginForm } from '@/components/auth/login-form'
+import { SITE_NAME } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'Iniciar sesión · Faro',
+  title: `Iniciar sesión · ${SITE_NAME}`,
 }
 
 export default function LoginPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Iniciar sesión</h1>
+    <AuthCard
+      title="Iniciar sesión"
+      intro="Entra para ver tus sitios, sus auditorías y su evolución."
+      alternate={{ question: '¿No tienes cuenta?', href: '/registro', label: 'Crear cuenta' }}
+    >
       <LoginForm />
-      <p className="text-sm text-zinc-700 dark:text-zinc-300">
-        ¿No tienes cuenta?{' '}
-        <Link
-          href="/registro"
-          className="font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          Crear cuenta
-        </Link>
-      </p>
-    </div>
+    </AuthCard>
   )
 }

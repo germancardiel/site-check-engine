@@ -9,15 +9,17 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 
 const env = vi.hoisted(() => {
   const previous = process.env.NEXT_PUBLIC_SITE_URL
-  process.env.NEXT_PUBLIC_SITE_URL = 'http://faro.test'
+  process.env.NEXT_PUBLIC_SITE_URL = 'http://sce.test'
   return { previous }
 })
 
 const session = vi.hoisted(() => ({ user: null as { id: string } | null, fail: false }))
 
 vi.mock('next/font/google', () => ({
-  Geist: () => ({ variable: 'font-geist-sans' }),
-  Geist_Mono: () => ({ variable: 'font-geist-mono' }),
+  Syne: () => ({ variable: 'font-syne' }),
+  Plus_Jakarta_Sans: () => ({ variable: 'font-jakarta' }),
+  Fraunces: () => ({ variable: 'font-fraunces' }),
+  JetBrains_Mono: () => ({ variable: 'font-jetbrains' }),
 }))
 
 // During a static render the session hole never resolves, as in Next's prerender: the shell
@@ -44,8 +46,11 @@ import { SessionCtas } from '@/components/landing/session-ctas'
 import { runAudit } from '@/lib/audit'
 import { type TransportHandler, mockLookup, mockTransport } from '@/lib/audit/__tests__/fixtures/helpers'
 import { parseHtml } from '@/lib/audit/parse'
+import { CHECK_CATALOG } from '@/lib/audit/checks'
+import { CHECK_STATUS_LABEL } from '@/lib/audit/present'
+import { buildSpecimen } from '@/lib/specimen'
 
-const BASE = 'http://faro.test'
+const BASE = 'http://sce.test'
 
 function attr(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
@@ -120,7 +125,7 @@ afterAll(() => {
   else process.env.NEXT_PUBLIC_SITE_URL = env.previous
 })
 
-describe('la landing aprueba el motor de Faro', () => {
+describe('la landing aprueba el motor de Site Check Engine', () => {
   it('todos los checks dan pass salvo https (en local se sirve por HTTP)', async () => {
     const result = await runAudit(`${BASE}/`, { lookup: mockLookup(), transport: mockTransport(fetchMock) })
     if (result.status !== 'ok') throw new Error(`La auditoría falló: ${result.error}`)
@@ -136,7 +141,7 @@ describe('la landing aprueba el motor de Faro', () => {
     for (const path of ['/', '/login', '/registro']) {
       expect(files['/sitemap.xml']).toContain(`<loc>${BASE}${path}</loc>`)
     }
-    expect(files['/llms.txt']).toMatch(/^# Faro\n/)
+    expect(files['/llms.txt']).toMatch(/^# Site Check Engine\n/)
   })
 
   it('la imagen Open Graph se genera con next/og a 1200×630', () => {
@@ -162,7 +167,7 @@ describe('estructura de la landing', () => {
   it('tiene las secciones de la tarea y CTA a /registro y /login para visitantes', () => {
     const page = $()
     const h2 = page('h2').map((_, el) => page(el).text()).get()
-    expect(h2).toEqual(['Qué revisa Faro', 'Cómo funciona', 'Empieza a auditar tu web hoy'])
+    expect(h2).toEqual(['Qué revisa Site Check Engine', 'Cómo funciona', 'Empieza a auditar tu web hoy'])
     expect(page('a[href="/registro"]').first().text()).toBe('Crear cuenta gratis')
     expect(page('a[href="/login"]').first().text()).toBe('Entrar')
     expect(page('footer')).toHaveLength(1)
@@ -173,6 +178,38 @@ describe('estructura de la landing', () => {
     expect(items).toContain('Datos estructurados')
     expect(items).toContain('Título de la página')
     expect(items).toHaveLength(19)
+  })
+})
+
+describe('informe de ejemplo de la landing (T13 CA4)', () => {
+  const $ = () => parseHtml(renderLanding())
+
+  it('está etiquetado como ejemplo y lista todos los checks del catálogo con su estado', () => {
+    const page = $()
+    const figure = page('figure[aria-labelledby="informe-ejemplo"]')
+    expect(figure).toHaveLength(1)
+    expect(page('#informe-ejemplo').text()).toContain('Informe de ejemplo')
+    const rows = figure.find('li')
+    expect(rows).toHaveLength(CHECK_CATALOG.length)
+    const specimen = buildSpecimen()
+    rows.each((index, row) => {
+      const text = page(row).text()
+      expect(text).toContain(specimen.rows[index].id)
+      expect(text).toContain(CHECK_STATUS_LABEL[specimen.rows[index].status])
+    })
+  })
+
+  it('muestra las dos notas como medidores accesibles', () => {
+    const meters = $()('figure [role="meter"]')
+    expect(meters.map((_, el) => $()(el).attr('aria-label')).get()).toEqual(['Nota SEO', 'Nota IA'])
+    const specimen = buildSpecimen()
+    expect(meters.map((_, el) => Number($()(el).attr('aria-valuenow'))).get()).toEqual([specimen.seoScore, specimen.aiScore])
+  })
+
+  it('la palabra resaltada del h1 va en la tipografía serif y no hay eyebrow sobre el h1', () => {
+    const page = $()
+    expect(page('h1 em').attr('class')).toContain('font-serif')
+    expect(page('h1').prev().length).toBe(0)
   })
 })
 

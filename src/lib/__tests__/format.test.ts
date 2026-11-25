@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatAbsoluteDate, formatRelativeTime, formatShortDate, siteDisplayName } from '@/lib/format'
+import { formatAbsoluteDate, formatElapsed, formatRelativeTime, formatShortDate, siteDisplayName } from '@/lib/format'
 
 const NOW = new Date('2026-11-25T12:00:00.000Z')
 
@@ -67,5 +67,25 @@ describe('formatAbsoluteDate y formatShortDate', () => {
   it('devuelven cadena vacía con fechas inválidas', () => {
     expect(formatAbsoluteDate('no es una fecha')).toBe('')
     expect(formatShortDate('no es una fecha')).toBe('')
+  })
+})
+
+describe('formatElapsed', () => {
+  it('formatea mm:ss con ceros a la izquierda', () => {
+    expect(formatElapsed(0)).toBe('00:00')
+    expect(formatElapsed(999)).toBe('00:00')
+    expect(formatElapsed(5_000)).toBe('00:05')
+    expect(formatElapsed(75_000)).toBe('01:15')
+    expect(formatElapsed(119_999)).toBe('01:59')
+  })
+
+  it('sigue sumando minutos pasada la hora', () => {
+    expect(formatElapsed(61 * 60_000 + 7_000)).toBe('61:07')
+  })
+
+  it('trata valores negativos o no finitos como cero', () => {
+    expect(formatElapsed(-3_000)).toBe('00:00')
+    expect(formatElapsed(Number.NaN)).toBe('00:00')
+    expect(formatElapsed(Number.POSITIVE_INFINITY)).toBe('00:00')
   })
 })

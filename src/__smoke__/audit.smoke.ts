@@ -4,7 +4,7 @@ import { smokeBaseUrl } from './env'
 import { LOCAL_AUDIT_HOST, isLoopbackOrigin, selfAuditTarget } from './self-audit'
 
 describe('smoke de autoauditoría', () => {
-  it('Faro se audita a sí mismo con status ok y todos los checks en pass', async () => {
+  it('Site Check Engine se audita a sí mismo con status ok y todos los checks en pass', async () => {
     const base = smokeBaseUrl()
     const { url, deps } = selfAuditTarget(base)
     const outcome = await runAudit(url, deps)

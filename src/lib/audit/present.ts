@@ -43,10 +43,25 @@ export function groupChecks(checks: CheckResult[]): CheckGroup[] {
   })
 }
 
-export type CatalogGroup = { category: CheckCategory; title: string; checks: CheckInfo[] }
+export type CheckPriority = {
+  /** `fail` first, then `warn`, across both categories. */
+  pending: CheckResult[]
+  passed: CheckResult[]
+}
+
+/** Splits checks into what to fix first (`fail` → `warn`, SEO and IA together) and what passed. */
+export function prioritizeChecks(checks: CheckResult[]): CheckPriority {
+  const sorted = sortChecks(checks)
+  return {
+    pending: sorted.filter((check) => check.status !== 'pass'),
+    passed: sorted.filter((check) => check.status === 'pass'),
+  }
+}
+
+export type CatalogGroup<T extends CheckInfo = CheckInfo> = { category: CheckCategory; title: string; checks: T[] }
 
 /** Splits the check catalog into the SEO and IA sections, keeping the catalog order. */
-export function groupCatalog(catalog: CheckInfo[]): CatalogGroup[] {
+export function groupCatalog<T extends CheckInfo>(catalog: T[]): CatalogGroup<T>[] {
   return CATEGORY_ORDER.map((category) => ({
     category,
     title: CHECK_CATEGORY_LABEL[category],

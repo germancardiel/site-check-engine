@@ -2,11 +2,13 @@ import type { MetadataRoute } from 'next'
 import { CHECK_CATALOG, type CheckInfo } from './audit/checks'
 import { AI_CRAWLERS } from './audit/checks/ai'
 import { groupCatalog } from './audit/present'
+import { SITE_NAME } from './brand'
 
-export const SITE_NAME = 'Faro'
-/** `<title>` of the landing: 10–60 characters (Faro's own `title` check). */
-export const SITE_TITLE = 'Faro · Auditoría SEO y de visibilidad en IA'
-/** Meta description of the landing: 50–160 characters (Faro's own `meta-description` check). */
+export { SITE_NAME }
+
+/** `<title>` of the landing: 10–60 characters (the engine's own `title` check). */
+export const SITE_TITLE = `${SITE_NAME} · Auditoría SEO y de visibilidad en IA`
+/** Meta description of the landing: 50–160 characters (the engine's own `meta-description` check). */
 export const SITE_DESCRIPTION =
   'Audita tu web en SEO y en visibilidad para asistentes de IA, sigue su evolución y recibe un plan de acción priorizado.'
 
@@ -14,7 +16,7 @@ export const DEFAULT_SITE_URL = 'http://localhost:3000'
 
 /** Public pages listed in the sitemap and in llms.txt. */
 export const PUBLIC_PAGES = [
-  { path: '/', name: 'Inicio', description: 'Qué revisa Faro y cómo funciona.' },
+  { path: '/', name: 'Inicio', description: `Qué revisa ${SITE_NAME} y cómo funciona.` },
   { path: '/registro', name: 'Crear cuenta', description: 'Registro gratuito con email y contraseña.' },
   { path: '/login', name: 'Entrar', description: 'Acceso para usuarios registrados.' },
 ] as const
@@ -61,7 +63,7 @@ export function buildSitemap(base: string): MetadataRoute.Sitemap {
   }))
 }
 
-/** llms.txt (Markdown) describing Faro, its public pages and the checks it runs. */
+/** llms.txt (Markdown) describing the product, its public pages and the checks it runs. */
 export function buildLlmsTxt(base: string, catalog: CheckInfo[] = CHECK_CATALOG): string {
   const pages = PUBLIC_PAGES.map((page) => `- [${page.name}](${absoluteUrl(page.path, base)}): ${page.description}`)
   const groups = groupCatalog(catalog).flatMap((group) => [
@@ -75,13 +77,13 @@ export function buildLlmsTxt(base: string, catalog: CheckInfo[] = CHECK_CATALOG)
     '',
     `> ${SITE_DESCRIPTION}`,
     '',
-    'Faro analiza una URL pública, puntúa de 0 a 100 su SEO técnico y su visibilidad para asistentes de IA, guarda el historial de cada sitio y genera con IA un plan de acción priorizado.',
+    `${SITE_NAME} analiza una URL pública, puntúa de 0 a 100 su SEO técnico y su visibilidad para asistentes de IA, guarda el historial de cada sitio y genera con IA un plan de acción priorizado.`,
     '',
     '## Páginas',
     '',
     ...pages,
     '',
-    '## Qué revisa Faro',
+    `## Qué revisa ${SITE_NAME}`,
     ...groups,
     '',
   ].join('\n')

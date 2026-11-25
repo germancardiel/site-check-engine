@@ -6,6 +6,7 @@ import {
   groupCatalog,
   groupChecks,
   hasCheckChanges,
+  prioritizeChecks,
   resolveComparisonTarget,
   sortChecks,
   type ComparisonCandidate,
@@ -38,6 +39,25 @@ describe('sortChecks', () => {
     const input = [check('p', 'seo', 'pass'), check('f', 'seo', 'fail')]
     sortChecks(input)
     expect(input.map((item) => item.id)).toEqual(['p', 'f'])
+  })
+})
+
+describe('prioritizeChecks', () => {
+  it('pone primero los fail y luego los warn de ambas categorías, y aparta los pass', () => {
+    const { pending, passed } = prioritizeChecks([
+      check('p1', 'seo', 'pass'),
+      check('w1', 'ai', 'warn'),
+      check('f1', 'seo', 'fail'),
+      check('w2', 'seo', 'warn'),
+      check('f2', 'ai', 'fail'),
+      check('p2', 'ai', 'pass'),
+    ])
+    expect(pending.map((item) => item.id)).toEqual(['f1', 'f2', 'w1', 'w2'])
+    expect(passed.map((item) => item.id)).toEqual(['p1', 'p2'])
+  })
+
+  it('devuelve listas vacías sin checks', () => {
+    expect(prioritizeChecks([])).toEqual({ pending: [], passed: [] })
   })
 })
 

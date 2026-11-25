@@ -8,7 +8,7 @@ import type { SafeFetchOptions, SafeFetchResult } from './types'
 export { AuditFetchError, type AuditFetchErrorCode } from './errors'
 export { resolvePublicAddresses } from './safe-lookup'
 
-export const USER_AGENT = 'FaroBot/1.0 (+https://faro.app)'
+export const USER_AGENT = 'SiteCheckEngineBot/1.0 (+https://site-check-engine.vercel.app)'
 export const DEFAULT_TIMEOUT_MS = 10_000
 export const DEFAULT_MAX_BYTES = 3 * 1024 * 1024
 export const DEFAULT_MAX_REDIRECTS = 5

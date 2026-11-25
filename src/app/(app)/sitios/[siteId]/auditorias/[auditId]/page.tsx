@@ -5,23 +5,25 @@ import { Suspense, type ReactNode } from 'react'
 import { ChangesSection } from '@/components/ai/changes-section'
 import { PlanSection } from '@/components/ai/plan-section'
 import { AuditComparison } from '@/components/audits/audit-comparison'
-import { AuditScores } from '@/components/audits/audit-scores'
+import { AuditSummary } from '@/components/audits/audit-summary'
 import { CheckList } from '@/components/audits/check-list'
 import { CompareForm, type CompareOption } from '@/components/audits/compare-form'
 import { DetailSkeleton } from '@/components/audits/detail-skeleton'
 import { AuditSiteForm } from '@/components/sites/audit-site-form'
 import { BackLink } from '@/components/ui/back-link'
+import { StatusIcon } from '@/components/ui/status-icon'
 import { madridDay, readAuditReports, remainingGenerations } from '@/lib/ai/reports'
 import { diffAudits, type AuditDiff } from '@/lib/audit/diff'
 import { resolveComparisonTarget } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
 import { formatAbsoluteDate, formatRelativeTime, siteDisplayName } from '@/lib/format'
+import { SITE_NAME } from '@/lib/site'
 import { createClient } from '@/lib/supabase/server'
 import type { Tables } from '@/lib/supabase/types'
 import { auditRouteParamsSchema, parseChecks, parseCompareParam } from '@/lib/validation/audit'
 
 export const metadata: Metadata = {
-  title: 'Auditoría · Faro',
+  title: `Auditoría · ${SITE_NAME}`,
 }
 
 // `auditSite` (re-audit) can take ~10 s per fetch; the AI actions wait up to `AI_TIMEOUT_MS` (120 s)
@@ -135,16 +137,17 @@ type ComparisonSectionProps = { comparison: Comparison; options: CompareOption[]
 
 function ComparisonSection({ comparison, options, action, aiSummary }: ComparisonSectionProps) {
   return (
-    <section aria-labelledby="comparison-title" className="flex flex-col gap-4">
-      <h2 id="comparison-title" className="text-xl font-semibold">
+    <section aria-labelledby="comparison-title" className="flex flex-col gap-5 border-t border-line pt-10">
+      <h2 id="comparison-title" className="text-2xl font-semibold">
         Comparación
       </h2>
       {comparison.kind === 'ok' ? <AuditComparison since={comparison.since} diff={comparison.diff} /> : null}
       {comparison.kind === 'none' ? (
-        <p className="text-zinc-700 dark:text-zinc-300">No hay una auditoría anterior con la que comparar.</p>
+        <p className="text-ink-muted">No hay una auditoría anterior con la que comparar.</p>
       ) : null}
       {comparison.kind === 'invalid' ? (
-        <p role="alert" className="text-red-800 dark:text-red-300">
+        <p role="alert" className="flex items-start gap-2 text-ink">
+          <StatusIcon status="fail" className="mt-1" />
           No se pudo cargar la comparación. Prueba con otra auditoría.
         </p>
       ) : null}
@@ -170,7 +173,8 @@ async function OkAuditBody({ supabase, userId, audit, compareParam, action, now 
   if (!checks.ok) {
     console.error('[AuditPage] invalid checks', audit.id, checks.error)
     return (
-      <p role="alert" className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+      <p role="alert" className="flex items-start gap-2 rounded-md border border-fail px-4 py-3 text-ink">
+        <StatusIcon status="fail" className="mt-1" />
         No se pudieron mostrar los resultados de esta auditoría. Vuelve a auditar el sitio.
       </p>
     )
@@ -197,6 +201,12 @@ async function OkAuditBody({ supabase, userId, audit, compareParam, action, now 
 
   return (
     <>
+      <section aria-labelledby="checks-title" className="flex flex-col gap-5">
+        <h2 id="checks-title" className="text-2xl font-semibold">
+          Qué arreglar primero
+        </h2>
+        <CheckList checks={checks.checks} />
+      </section>
       <PlanSection
         siteId={audit.site_id}
         auditId={audit.id}
@@ -205,12 +215,6 @@ async function OkAuditBody({ supabase, userId, audit, compareParam, action, now 
         remaining={ai.remaining}
         loadError={ai.loadError}
       />
-      <section aria-labelledby="checks-title" className="flex flex-col gap-4">
-        <h2 id="checks-title" className="text-xl font-semibold">
-          Comprobaciones
-        </h2>
-        <CheckList checks={checks.checks} />
-      </section>
       <ComparisonSection comparison={comparison} options={rows.options} action={action} aiSummary={aiSummary} />
     </>
   )
@@ -229,26 +233,36 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
     <>
       <BackLink href={`/sitios/${site.id}`}>Volver a {displayName}</BackLink>
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight break-words">Auditoría de {displayName}</h1>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">
-          <time dateTime={audit.created_at}>{formatAbsoluteDate(audit.created_at)}</time> ·{' '}
-          {formatRelativeTime(audit.created_at, now)}
-        </p>
-        <p className="text-sm break-all text-zinc-700 dark:text-zinc-300">{site.url}</p>
+        <h1 className="font-display text-4xl font-semibold tracking-display break-words sm:text-5xl">
+          Auditoría de {displayName}
+        </h1>
+        <p className="font-mono text-sm break-all text-ink-muted">{site.url}</p>
       </header>
       {audit.status === 'error' ? (
-        <section className="flex flex-col items-start gap-4 rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
-          <p className="text-red-800 dark:text-red-200">
-            <span className="font-medium">
-              <span aria-hidden="true">✕ </span>La auditoría falló:
-            </span>{' '}
-            {audit.error ?? 'Error desconocido.'}
+        <section aria-labelledby="failed-title" className="flex flex-col items-start gap-4 rounded-md border border-fail bg-panel p-5">
+          <h2 id="failed-title" className="flex items-center gap-2 text-lg font-semibold">
+            <StatusIcon status="fail" />
+            La auditoría falló
+          </h2>
+          <p className="text-ink-muted">{audit.error ?? 'Error desconocido.'}</p>
+          <p className="text-sm text-ink-muted">
+            <time dateTime={audit.created_at} className="font-mono text-ink">
+              {formatAbsoluteDate(audit.created_at)}
+            </time>{' '}
+            · {formatRelativeTime(audit.created_at, now)}
           </p>
-          <AuditSiteForm siteId={site.id} siteName={displayName} />
+          <AuditSiteForm siteId={site.id} siteName={displayName} label="Volver a auditar" variant="primary" />
         </section>
       ) : (
         <>
-          <AuditScores score={audit.score} seoScore={audit.seo_score} aiScore={audit.ai_score} size="lg" />
+          <AuditSummary
+            score={audit.score}
+            seoScore={audit.seo_score}
+            aiScore={audit.ai_score}
+            createdAt={audit.created_at}
+            now={now}
+            action={<AuditSiteForm siteId={site.id} siteName={displayName} label="Volver a auditar" variant="primary" />}
+          />
           <OkAuditBody supabase={supabase} userId={userId} audit={audit} compareParam={query.comparar} action={action} now={now} />
         </>
       )}
@@ -258,8 +272,8 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
 
 export default function AuditPage(props: AuditPageProps) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
-      <Suspense fallback={<DetailSkeleton label="Cargando la auditoría…" />}>
+    <div className="mx-auto flex w-full max-w-app flex-1 flex-col gap-10 px-4 py-10 sm:px-6 sm:py-14">
+      <Suspense fallback={<DetailSkeleton variant="audit" label="Cargando la auditoría…" />}>
         <AuditContent {...props} />
       </Suspense>
     </div>

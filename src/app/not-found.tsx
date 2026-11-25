@@ -1,21 +1,24 @@
 import type { Metadata } from 'next'
 import { PublicHeader } from '@/components/layout/public-header'
-import { BackLink } from '@/components/ui/back-link'
+import { NotFoundState } from '@/components/ui/not-found-state'
+import { SITE_NAME } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'Página no encontrada · Faro',
+  title: `Página no encontrada · ${SITE_NAME}`,
 }
 
 export default function NotFound() {
   return (
     <>
-      <PublicHeader />
-      <main id="contenido" className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-start gap-4 px-4 py-12">
-        <h1 className="text-2xl font-semibold tracking-tight">Página no encontrada</h1>
-        <p className="text-zinc-700 dark:text-zinc-300">
-          La dirección que buscas no existe o ha cambiado. Comprueba que está bien escrita o vuelve al inicio.
-        </p>
-        <BackLink href="/">Volver al inicio</BackLink>
+      <PublicHeader className="max-w-app" />
+      <main id="contenido" className="flex flex-1 flex-col">
+        <NotFoundState
+          title="Página no encontrada"
+          emphasis="no encontrada"
+          message="La dirección que buscas no existe o ha cambiado. Comprueba que está bien escrita o vuelve al inicio."
+          href="/"
+          linkLabel="Volver al inicio"
+        />
       </main>
     </>
   )

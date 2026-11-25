@@ -11,7 +11,7 @@ import type { TransportInit } from '../types'
 import { mockLookup } from './fixtures/helpers'
 import { HTTP_PAGE_URL, IP_HTTPS_URL, PAGE_URL, PORT_HTTPS_URL, PUBLIC_IP } from './fixtures/urls'
 
-const HEADERS = { 'user-agent': 'FaroBot/test' }
+const HEADERS = { 'user-agent': 'SiteCheckEngineBot/test' }
 
 function init(lookup: LookupFunction = createSafeLookup(mockLookup())): TransportInit {
   return { headers: HEADERS, signal: new AbortController().signal, lookup }
@@ -158,10 +158,10 @@ describe('nodeTransport — sockets reales de Node, sin red externa', () => {
     const lookup = vi.fn<LookupFunction>((_hostname, options, callback) =>
       options.all ? callback(null, [{ address: '127.0.0.1', family: 4 }]) : callback(null, '127.0.0.1', 4),
     )
-    const response = await nodeTransport(`http://faro.test:${port}/`, init(lookup))
+    const response = await nodeTransport(`http://sce.test:${port}/`, init(lookup))
     expect(await response.text()).toBe('local')
-    expect(lookup).toHaveBeenCalledWith('faro.test', expect.anything(), expect.any(Function))
-    expect(seen).toEqual({ host: `faro.test:${port}`, ua: HEADERS['user-agent'] })
+    expect(lookup).toHaveBeenCalledWith('sce.test', expect.anything(), expect.any(Function))
+    expect(seen).toEqual({ host: `sce.test:${port}`, ua: HEADERS['user-agent'] })
   })
   it('la señal de abort (timeout de safeFetch) corta la conexión', async () => {
     server = http.createServer(() => {})
@@ -169,7 +169,7 @@ describe('nodeTransport — sockets reales de Node, sin red externa', () => {
     const { port } = server.address() as AddressInfo
     const lookup: LookupFunction = (_hostname, _options, callback) => callback(null, [{ address: '127.0.0.1', family: 4 }])
     const controller = new AbortController()
-    const pending = nodeTransport(`http://faro.test:${port}/`, { ...init(lookup), signal: controller.signal })
+    const pending = nodeTransport(`http://sce.test:${port}/`, { ...init(lookup), signal: controller.signal })
     setTimeout(() => controller.abort(), 20)
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
     server.closeAllConnections()

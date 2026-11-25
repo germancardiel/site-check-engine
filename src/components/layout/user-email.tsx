@@ -9,7 +9,7 @@ export async function UserEmail() {
   if (!user?.email) return null
 
   return (
-    <p className="min-w-0 text-sm break-all text-zinc-700 dark:text-zinc-300">
+    <p className="min-w-0 truncate font-mono text-xs text-ink-muted" title={user.email}>
       <span className="sr-only">Has iniciado sesión como </span>
       {user.email}
     </p>

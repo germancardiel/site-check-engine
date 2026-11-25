@@ -7,28 +7,21 @@ type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   hint?: string
 }
 
+export const INPUT_CLASS =
+  'min-h-10 w-full rounded-md border border-line-strong bg-panel px-3 py-2 text-base text-ink transition-colors duration-200 ease-out placeholder:text-ink-muted hover:border-ink focus-visible:border-focus'
+
 /** Text input with an associated `<label>` and an optional hint. */
 export function TextField({ id, label, hint, className, ...inputProps }: TextFieldProps) {
   const hintId = hint ? `${id}-hint` : undefined
 
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-ink">
         {label}
       </label>
-      <input
-        id={id}
-        aria-describedby={hintId}
-        className={cn(
-          'w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-base text-zinc-900',
-          'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-zinc-900',
-          'dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-white',
-          className,
-        )}
-        {...inputProps}
-      />
+      <input id={id} aria-describedby={hintId} className={cn(INPUT_CLASS, className)} {...inputProps} />
       {hint ? (
-        <p id={hintId} className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p id={hintId} className="text-sm text-ink-muted">
           {hint}
         </p>
       ) : null}

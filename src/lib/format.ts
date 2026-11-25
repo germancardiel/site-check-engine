@@ -63,3 +63,11 @@ export function formatShortDate(date: Date | string): string {
   const target = toDate(date)
   return target ? shortFormatter.format(target) : ''
 }
+
+/** Elapsed time as `mm:ss` (minutes keep growing past 59), e.g. 75 000 ms → "01:15". */
+export function formatElapsed(ms: number): string {
+  const total = Number.isFinite(ms) && ms > 0 ? Math.floor(ms / 1000) : 0
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}

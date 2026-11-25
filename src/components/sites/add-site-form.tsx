@@ -9,6 +9,7 @@ import { SITE_NAME_MAX_LENGTH, type SiteActionState } from '@/lib/validation/sit
 
 const INITIAL_STATE: SiteActionState = {}
 
+/** Inline form to add a site: URL, optional name and "Añadir" on one line (stacked on mobile). */
 export function AddSiteForm() {
   const [state, formAction] = useActionState(createSite, INITIAL_STATE)
 
@@ -17,12 +18,12 @@ export function AddSiteForm() {
       action={formAction}
       noValidate
       aria-labelledby="add-site-title"
-      className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+      className="flex flex-col gap-3 rounded-md border border-line bg-panel p-4 sm:p-5"
     >
-      <h2 id="add-site-title" className="text-lg font-semibold">
+      <h2 id="add-site-title" className="text-base font-semibold">
         Añadir un sitio
       </h2>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto]">
         <TextField
           id="site-url"
           name="url"
@@ -30,7 +31,7 @@ export function AddSiteForm() {
           inputMode="url"
           label="URL"
           placeholder="ejemplo.com"
-          hint="Si no indicas el protocolo, se usará https://."
+          aria-describedby="site-url-hint"
           autoComplete="url"
           required
         />
@@ -42,11 +43,14 @@ export function AddSiteForm() {
           maxLength={SITE_NAME_MAX_LENGTH}
           autoComplete="off"
         />
+        <SubmitButton pendingLabel="Añadiendo…" className="w-full sm:w-auto">
+          Añadir
+        </SubmitButton>
       </div>
+      <p id="site-url-hint" className="text-sm text-ink-muted">
+        Si no indicas el protocolo, se usará https://.
+      </p>
       <FormFeedback error={state.error} message={state.message} />
-      <SubmitButton pendingLabel="Añadiendo…" className="self-start">
-        Añadir
-      </SubmitButton>
     </form>
   )
 }

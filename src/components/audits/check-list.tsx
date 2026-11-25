@@ -1,76 +1,94 @@
-import { checkAnchorId, groupChecks, type CheckGroup } from '@/lib/audit/present'
+import { CHECK_CATEGORY_LABEL, checkAnchorId, groupChecks, prioritizeChecks } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
 import { CheckStatusBadge } from './check-status-badge'
 import { DetailsAnchorOpener } from './details-anchor-opener'
 
-function CheckItem({ check }: { check: CheckResult }) {
+function CheckItem({ check, level }: { check: CheckResult; level: 3 | 4 }) {
+  const pending = check.status !== 'pass'
+  const Heading = level === 3 ? 'h3' : 'h4'
   return (
     <li
       id={checkAnchorId(check.id)}
-      className="flex scroll-mt-4 flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+      className="grid scroll-mt-4 gap-2 border-b border-line py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h4 className="font-medium break-words text-zinc-900 dark:text-zinc-100">{check.title}</h4>
-        <CheckStatusBadge status={check.status} />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <Heading className="font-semibold break-words text-ink">{check.title}</Heading>
+          <span className="font-mono text-xs text-ink-muted">
+            {check.id} · {CHECK_CATEGORY_LABEL[check.category]}
+          </span>
+        </div>
+        <p className="text-sm break-words text-ink-muted">{check.message}</p>
+        {pending ? (
+          <p className="text-sm break-words text-ink">
+            <span className="font-semibold">Recomendación: </span>
+            {check.recommendation}
+          </p>
+        ) : null}
       </div>
-      <p className="text-sm break-words text-zinc-700 dark:text-zinc-300">{check.message}</p>
-      {check.status !== 'pass' ? (
-        <p className="text-sm break-words text-zinc-900 dark:text-zinc-100">
-          <span className="font-medium">Recomendación: </span>
-          {check.recommendation}
-        </p>
-      ) : (
-        <p className="text-sm break-words text-zinc-700 dark:text-zinc-300">{check.recommendation}</p>
-      )}
+      <CheckStatusBadge status={check.status} className="self-start justify-self-start sm:col-start-2 sm:row-start-1 sm:justify-self-end" />
     </li>
   )
 }
 
-function CheckSection({ group }: { group: CheckGroup }) {
-  const headingId = `checks-${group.category}`
-  const total = group.pending.length + group.passed.length
-
+function PassedChecks({ passed }: { passed: CheckResult[] }) {
+  const groups = groupChecks(passed).filter((group) => group.passed.length > 0)
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h3 id={headingId} className="text-lg font-semibold">
-        {group.title}
-      </h3>
-      {total === 0 ? (
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">No hay comprobaciones en esta sección.</p>
-      ) : null}
-      {group.pending.length > 0 ? (
-        <ul className="flex flex-col gap-3">
-          {group.pending.map((check) => (
-            <CheckItem key={check.id} check={check} />
-          ))}
-        </ul>
-      ) : null}
-      {group.passed.length > 0 ? (
-        <details>
-          <summary className="cursor-pointer rounded-md text-sm font-medium text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-white">
-            {group.passed.length === 1
-              ? '1 comprobación superada'
-              : `${group.passed.length} comprobaciones superadas`}
-          </summary>
-          <ul className="mt-3 flex flex-col gap-3">
-            {group.passed.map((check) => (
-              <CheckItem key={check.id} check={check} />
-            ))}
-          </ul>
-        </details>
-      ) : null}
-    </section>
+    <details className="group rounded-md border border-line">
+      <summary className="flex cursor-pointer items-center justify-between gap-3 rounded-md px-4 py-3 text-sm font-semibold text-ink transition-colors duration-200 ease-out hover:bg-panel">
+        <span>
+          {passed.length === 1 ? '1 comprobación superada' : `${passed.length} comprobaciones superadas`}
+        </span>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="size-4 text-ink-muted transition-transform duration-200 ease-out group-open:rotate-180"
+        >
+          <path d="m4 6 4 4 4-4" />
+        </svg>
+      </summary>
+      <div className="flex flex-col gap-6 px-4 pb-2">
+        {groups.map((group) => (
+          <section key={group.category} aria-labelledby={`passed-${group.category}`} className="flex flex-col">
+            <h3 id={`passed-${group.category}`} className="pt-3 font-mono text-xs tracking-wider text-ink-muted uppercase">
+              {group.title}
+            </h3>
+            <ul>
+              {group.passed.map((check) => (
+                <CheckItem key={check.id} check={check} level={4} />
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </details>
   )
 }
 
-/** Checks grouped into SEO and IA, sorted from `fail` to `pass`; passed ones are folded. */
+/** "Qué arreglar primero": `fail` then `warn` across SEO and IA; the passed checks folded below. */
 export function CheckList({ checks }: { checks: CheckResult[] }) {
+  const { pending, passed } = prioritizeChecks(checks)
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <DetailsAnchorOpener />
-      {groupChecks(checks).map((group) => (
-        <CheckSection key={group.category} group={group} />
-      ))}
+      {pending.length > 0 ? (
+        <ul className="border-t border-line-strong">
+          {pending.map((check) => (
+            <CheckItem key={check.id} check={check} level={3} />
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-md border border-pass p-4 text-ink">
+          Nada pendiente: todas las comprobaciones de esta auditoría están superadas.
+        </p>
+      )}
+      {passed.length > 0 ? <PassedChecks passed={passed} /> : null}
     </div>
   )
 }

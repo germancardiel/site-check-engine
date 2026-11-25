@@ -1,26 +1,145 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Fonts come from next/font (variables set on <html> by the root layout). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-syne), var(--font-jakarta), ui-sans-serif, sans-serif;
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
+/* Colour tokens: dark theme (default). Values mirror src/lib/design/tokens.ts. */
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-ground: #151519;
+  --color-panel: #1D1D22;
+  --color-ink: #F5F2EB;
+  --color-ink-muted: #B4B2AD;
+  --color-line: rgb(245 242 235 / 18%);
+  --color-line-strong: rgb(245 242 235 / 40%);
+  --color-accent: #EE671B;
+  --color-accent-hover: #F2884A;
+  --color-on-accent: #151519;
+  --color-accent-text: #EE671B;
+  --color-focus: #EE671B;
+  --color-pass: #3FB27F;
+  --color-warn: #F2C14E;
+  --color-fail: #E5484D;
+
+  --container-landing: 1320px;
+  --container-app: 1080px;
+
+  --tracking-display: -0.035em;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Light theme: follows the system preference. */
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: light;
+    --color-ground: #F5F2EB;
+    --color-panel: #FAF8F4;
+    --color-ink: #151519;
+    --color-ink-muted: #5C5A55;
+    --color-line: rgb(21 21 25 / 14%);
+    --color-line-strong: rgb(21 21 25 / 50%);
+    --color-accent: #EE671B;
+    --color-accent-hover: #F2884A;
+    --color-on-accent: #151519;
+    --color-accent-text: #A93F08;
+    --color-focus: #A93F08;
+    --color-pass: #1E7A4C;
+    --color-warn: #8A6500;
+    --color-fail: #C2342F;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    background-color: var(--color-ground);
+    color: var(--color-ink);
+    scrollbar-color: var(--color-line-strong) var(--color-ground);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-ground);
+    color: var(--color-ink);
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: var(--color-accent-text);
+    accent-color: var(--color-accent);
+  }
+
+  a {
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  summary {
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+/* Landing: the sample report resolves check by check, once, on load. */
+@keyframes specimen-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes specimen-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer components {
+  .specimen-pending {
+    animation: specimen-out 1ms linear both;
+    animation-delay: calc(var(--step, 0) * 110ms + 500ms);
+  }
+
+  .specimen-resolved {
+    animation: specimen-in 220ms var(--ease-out-soft) both;
+    animation-delay: calc(var(--step, 0) * 110ms + 500ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .specimen-pending {
+      display: none;
+    }
+
+    .specimen-resolved {
+      animation: none;
+    }
+  }
 }

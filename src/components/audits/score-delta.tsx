@@ -1,23 +1,42 @@
 import { formatScoreDelta, type DeltaTrend } from '@/lib/audit/history'
 import { cn } from '@/lib/utils'
 
-const TREND_STYLE: Record<DeltaTrend, { icon: string; className: string }> = {
-  up: { icon: '▲', className: 'text-green-800 dark:text-green-300' },
-  down: { icon: '▼', className: 'text-red-800 dark:text-red-300' },
-  same: { icon: '=', className: 'text-zinc-700 dark:text-zinc-300' },
+const TREND_STYLE: Record<DeltaTrend, string> = {
+  up: 'text-pass',
+  down: 'text-fail',
+  same: 'text-ink-muted',
+}
+
+function TrendIcon({ trend }: { trend: DeltaTrend }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 12 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-3 shrink-0"
+    >
+      {trend === 'up' ? <path d="M6 10V2M2.5 5.5 6 2l3.5 3.5" /> : null}
+      {trend === 'down' ? <path d="M6 2v8M2.5 6.5 6 10l3.5-3.5" /> : null}
+      {trend === 'same' ? <path d="M2 4.5h8M2 7.5h8" /> : null}
+    </svg>
+  )
 }
 
 /** Score change with an arrow, a sign and a screen-reader text, so it never relies on color. */
 export function ScoreDelta({ delta, className }: { delta: number | null; className?: string }) {
   const formatted = formatScoreDelta(delta)
   if (!formatted) return null
-  const style = TREND_STYLE[formatted.trend]
 
   return (
-    <span className={cn('inline-flex items-center gap-1 text-sm font-medium', style.className, className)}>
-      <span aria-hidden="true">
-        {style.icon} {formatted.text}
-      </span>
+    <span
+      className={cn('inline-flex items-center gap-1 font-mono text-sm tabular-nums', TREND_STYLE[formatted.trend], className)}
+    >
+      <TrendIcon trend={formatted.trend} />
+      <span aria-hidden="true">{formatted.text}</span>
       <span className="sr-only">{formatted.label}</span>
     </span>
   )

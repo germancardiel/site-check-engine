@@ -16,7 +16,7 @@ import {
   siteUrl,
 } from '@/lib/site'
 
-const BASE = 'https://faro.example'
+const BASE = 'https://sce.example'
 
 afterEach(() => {
   vi.unstubAllEnvs()
@@ -29,17 +29,17 @@ describe('resolveSiteUrl', () => {
   })
 
   it('normaliza la URL y quita la barra final', () => {
-    expect(resolveSiteUrl(' https://faro.example/ ')).toBe(BASE)
-    expect(resolveSiteUrl('https://faro.example/app/')).toBe('https://faro.example/app')
+    expect(resolveSiteUrl(' https://sce.example/ ')).toBe(BASE)
+    expect(resolveSiteUrl('https://sce.example/app/')).toBe('https://sce.example/app')
   })
 
   it('descarta valores que no son URL http(s)', () => {
     expect(resolveSiteUrl('no es una url')).toBe(DEFAULT_SITE_URL)
-    expect(resolveSiteUrl('ftp://faro.example')).toBe(DEFAULT_SITE_URL)
+    expect(resolveSiteUrl('ftp://sce.example')).toBe(DEFAULT_SITE_URL)
   })
 
   it('siteUrl lee NEXT_PUBLIC_SITE_URL', () => {
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://faro.example/')
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://sce.example/')
     expect(siteUrl()).toBe(BASE)
     vi.stubEnv('NEXT_PUBLIC_SITE_URL', '')
     expect(siteUrl()).toBe(DEFAULT_SITE_URL)
@@ -57,8 +57,8 @@ describe('textos de la landing', () => {
 
 describe('absoluteUrl', () => {
   it('construye URLs absolutas, con barra final solo en la raíz', () => {
-    expect(absoluteUrl('/', BASE)).toBe('https://faro.example/')
-    expect(absoluteUrl('/login', BASE)).toBe('https://faro.example/login')
+    expect(absoluteUrl('/', BASE)).toBe('https://sce.example/')
+    expect(absoluteUrl('/login', BASE)).toBe('https://sce.example/login')
   })
 })
 
@@ -69,23 +69,23 @@ describe('buildRobots', () => {
       { userAgent: '*', allow: '/' },
       { userAgent: [...AI_CRAWLERS], allow: '/' },
     ])
-    expect(robots.sitemap).toBe('https://faro.example/sitemap.xml')
+    expect(robots.sitemap).toBe('https://sce.example/sitemap.xml')
   })
 })
 
 describe('buildSitemap', () => {
   it('incluye /, /login y /registro con URL absoluta', () => {
     const urls = buildSitemap(BASE).map((entry) => entry.url)
-    expect(urls).toEqual(['https://faro.example/', 'https://faro.example/registro', 'https://faro.example/login'])
+    expect(urls).toEqual(['https://sce.example/', 'https://sce.example/registro', 'https://sce.example/login'])
   })
 })
 
 describe('buildLlmsTxt', () => {
-  it('describe Faro, enlaza las páginas públicas y lista todos los checks', () => {
+  it('describe Site Check Engine, enlaza las páginas públicas y lista todos los checks', () => {
     const text = buildLlmsTxt(BASE)
-    expect(text.startsWith('# Faro\n')).toBe(true)
+    expect(text.startsWith('# Site Check Engine\n')).toBe(true)
     expect(text).toContain(`> ${SITE_DESCRIPTION}`)
-    expect(text).toContain('- [Crear cuenta](https://faro.example/registro)')
+    expect(text).toContain('- [Crear cuenta](https://sce.example/registro)')
     expect(text).toContain('### SEO')
     expect(text).toContain('### Visibilidad en IA')
     for (const check of CHECK_CATALOG) expect(text).toContain(`- ${check.title}`)
@@ -99,12 +99,12 @@ describe('buildLlmsTxt', () => {
 })
 
 describe('JSON-LD', () => {
-  it('declara la entidad WebSite de Faro', () => {
+  it('declara la entidad WebSite de Site Check Engine', () => {
     expect(buildWebsiteJsonLd(BASE)).toMatchObject({
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      name: 'Faro',
-      url: 'https://faro.example/',
+      name: 'Site Check Engine',
+      url: 'https://sce.example/',
     })
   })
 

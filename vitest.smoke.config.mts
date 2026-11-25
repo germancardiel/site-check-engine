@@ -37,7 +37,7 @@ function warnIfNoSession(env: Record<string, string>): void {
 }
 
 /**
- * Smoke tests against a running Faro (`next start` or production). They use the real
+ * Smoke tests against a running Site Check Engine (`next start` or production). They use the real
  * network, so they are never part of `npm test` (D-TEST-04): run them with `npm run test:smoke`.
  */
 export default defineConfig({

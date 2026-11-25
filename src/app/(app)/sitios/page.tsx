@@ -3,13 +3,14 @@ import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { AddSiteForm } from '@/components/sites/add-site-form'
-import type { SiteWithLatestAudit } from '@/components/sites/site-card'
+import type { SiteWithLatestAudit } from '@/components/sites/site-row'
 import { SiteList } from '@/components/sites/site-list'
 import { SitesSkeleton } from '@/components/sites/sites-skeleton'
+import { SITE_NAME } from '@/lib/site'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
-  title: 'Sitios · Faro',
+  title: `Sitios · ${SITE_NAME}`,
 }
 
 // `auditSite` can take up to ~10 s per page fetch plus auxiliary files.
@@ -51,8 +52,9 @@ async function SitesContent() {
     <>
       <AddSiteForm />
       <section aria-labelledby="site-list-title" className="flex flex-col gap-4">
-        <h2 id="site-list-title" className="text-lg font-semibold">
-          Sitios añadidos
+        <h2 id="site-list-title" className="flex items-baseline gap-3 text-base font-semibold">
+          Sitios añadidos{' '}
+          <span className="font-mono text-sm font-normal text-ink-muted tabular-nums">{sites.length}</span>
         </h2>
         <SiteList sites={sites} now={new Date()} />
       </section>
@@ -62,8 +64,8 @@ async function SitesContent() {
 
 export default function SitesPage() {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">Tus sitios</h1>
+    <div className="mx-auto flex w-full max-w-app flex-1 flex-col gap-8 px-4 py-10 sm:px-6 sm:py-14">
+      <h1 className="font-display text-4xl font-semibold tracking-display sm:text-5xl">Tus sitios</h1>
       <Suspense fallback={<SitesSkeleton />}>
         <SitesContent />
       </Suspense>

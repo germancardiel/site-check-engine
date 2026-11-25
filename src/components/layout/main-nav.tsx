@@ -7,9 +7,6 @@ import { cn } from '@/lib/utils'
 
 const LINKS = [{ href: '/sitios', label: 'Sitios' }]
 
-const LINK_CLASS =
-  'rounded-sm text-sm font-medium text-zinc-700 underline-offset-4 hover:text-zinc-900 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100 dark:focus-visible:outline-white'
-
 /** Links of the private area; with a pathname, the current one gets `aria-current`. */
 export function NavLinks({ pathname }: { pathname: string | null }) {
   return (
@@ -21,7 +18,10 @@ export function NavLinks({ pathname }: { pathname: string | null }) {
             <Link
               href={link.href}
               aria-current={current}
-              className={cn(LINK_CLASS, current && 'text-zinc-900 underline dark:text-zinc-100')}
+              className={cn(
+                'rounded-sm text-sm font-medium text-ink-muted underline-offset-[0.4em] transition-colors duration-200 ease-out hover:text-ink',
+                current && 'text-ink underline decoration-ink decoration-2',
+              )}
             >
               {link.label}
             </Link>

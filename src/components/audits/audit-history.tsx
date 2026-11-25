@@ -1,46 +1,62 @@
 import Link from 'next/link'
+import { StatusIcon } from '@/components/ui/status-icon'
 import type { HistoryEntry } from '@/lib/audit/history'
 import { formatAbsoluteDate, formatRelativeTime } from '@/lib/format'
-import { AuditScores } from './audit-scores'
 import { ScoreDelta } from './score-delta'
 
 const LINK_CLASS =
-  'rounded-sm text-sm font-medium text-zinc-900 underline underline-offset-4 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-100 dark:hover:text-zinc-300 dark:focus-visible:outline-white'
+  'rounded-sm text-sm font-medium text-ink underline decoration-line-strong transition-colors duration-200 ease-out hover:decoration-ink'
+
+function EntryScores({ entry }: { entry: HistoryEntry }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+      <dl className="flex gap-4 font-mono text-sm tabular-nums">
+        <div className="flex gap-1.5">
+          <dt className="text-ink-muted">Nota</dt>
+          <dd className="font-medium text-accent-text">{entry.score ?? '–'}</dd>
+        </div>
+        <div className="flex gap-1.5">
+          <dt className="text-ink-muted">SEO</dt>
+          <dd className="text-ink">{entry.seo_score ?? '–'}</dd>
+        </div>
+        <div className="flex gap-1.5">
+          <dt className="text-ink-muted">IA</dt>
+          <dd className="text-ink">{entry.ai_score ?? '–'}</dd>
+        </div>
+      </dl>
+      <ScoreDelta delta={entry.scoreDelta} />
+    </div>
+  )
+}
 
 function HistoryItem({ entry, siteId, now }: { entry: HistoryEntry; siteId: string; now: Date }) {
   const absolute = formatAbsoluteDate(entry.created_at)
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex min-w-0 flex-col gap-1">
-        <time dateTime={entry.created_at} className="font-medium text-zinc-900 dark:text-zinc-100">
+    <li className="grid gap-3 border-b border-line py-4 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:items-center sm:gap-6">
+      <div className="flex flex-col gap-0.5">
+        <time dateTime={entry.created_at} className="font-mono text-sm text-ink tabular-nums">
           {absolute}
         </time>
-        <span className="text-sm text-zinc-700 dark:text-zinc-300">{formatRelativeTime(entry.created_at, now)}</span>
-        {entry.status === 'error' ? (
-          <p className="text-sm break-words text-red-800 dark:text-red-300">
-            <span className="font-medium">
-              <span aria-hidden="true">✕ </span>Auditoría fallida:
-            </span>{' '}
-            {entry.error ?? 'Error desconocido.'}
-          </p>
-        ) : (
-          <p className="text-sm text-green-800 dark:text-green-300">
-            <span aria-hidden="true">✓ </span>Completada
-          </p>
-        )}
+        <span className="text-xs text-ink-muted">{formatRelativeTime(entry.created_at, now)}</span>
       </div>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        {entry.status === 'ok' ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <AuditScores score={entry.score} seoScore={entry.seo_score} aiScore={entry.ai_score} />
-            <ScoreDelta delta={entry.scoreDelta} />
-          </div>
-        ) : null}
-        <Link href={`/sitios/${siteId}/auditorias/${entry.id}`} className={LINK_CLASS}>
-          Ver detalle<span className="sr-only"> de la auditoría del {absolute}</span>
-        </Link>
-      </div>
+      {entry.status === 'error' ? (
+        <p className="flex min-w-0 items-start gap-2 text-sm">
+          <StatusIcon status="fail" className="mt-0.5" />
+          <span className="min-w-0 break-words text-ink-muted">
+            <span className="font-medium text-ink">Auditoría fallida:</span> {entry.error ?? 'Error desconocido.'}
+          </span>
+        </p>
+      ) : (
+        <div className="flex min-w-0 items-center gap-2">
+          <StatusIcon status="pass" />
+          <span className="sr-only">Completada.</span>
+          <EntryScores entry={entry} />
+        </div>
+      )}
+      <Link href={`/sitios/${siteId}/auditorias/${entry.id}`} className={LINK_CLASS}>
+        Ver detalle<span className="sr-only"> de la auditoría del {absolute}</span>
+      </Link>
     </li>
   )
 }
@@ -48,7 +64,7 @@ function HistoryItem({ entry, siteId, now }: { entry: HistoryEntry; siteId: stri
 /** Most recent audits of a site, each with its score change against the previous `ok` one. */
 export function AuditHistory({ entries, siteId, now }: { entries: HistoryEntry[]; siteId: string; now: Date }) {
   return (
-    <ol className="flex flex-col gap-3">
+    <ol className="border-t border-line-strong">
       {entries.map((entry) => (
         <HistoryItem key={entry.id} entry={entry} siteId={siteId} now={now} />
       ))}

@@ -16,7 +16,7 @@ vi.mock('@supabase/ssr', () => ({
 import { config, proxy } from '@/proxy'
 
 function request(path: string): NextRequest {
-  return new NextRequest(new URL(path, 'http://faro.test'))
+  return new NextRequest(new URL(path, 'http://sce.test'))
 }
 
 describe('proxy', () => {
@@ -39,14 +39,14 @@ describe('proxy', () => {
 
   it('redirige a /login a un usuario sin sesión que entra en /sitios', async () => {
     const response = await proxy(request('/sitios'))
-    expect(response.headers.get('location')).toBe('http://faro.test/login')
+    expect(response.headers.get('location')).toBe('http://sce.test/login')
   })
 
   it('redirige a /sitios a un usuario con sesión que entra en /login o /registro', async () => {
     auth.user = { id: 'u1' }
-    expect((await proxy(request('/login'))).headers.get('location')).toBe('http://faro.test/sitios')
+    expect((await proxy(request('/login'))).headers.get('location')).toBe('http://sce.test/sitios')
     expect((await proxy(request('/registro'))).headers.get('location')).toBe(
-      'http://faro.test/sitios',
+      'http://sce.test/sitios',
     )
   })
 

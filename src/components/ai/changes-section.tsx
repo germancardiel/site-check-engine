@@ -21,14 +21,17 @@ export function ChangesSection({ siteId, auditId, report, previousDate, comparin
   return (
     <section
       aria-labelledby="ai-changes-title"
-      className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="flex flex-col gap-3 rounded-md border border-line bg-panel p-5"
     >
       <h3 id="ai-changes-title" className="text-lg font-semibold">
         Resumen de cambios con IA
       </h3>
-      <p className="text-sm text-zinc-700 dark:text-zinc-300">
+      <p className="text-sm text-ink-muted">
         Compara esta auditoría con la anterior, del{' '}
-        <time dateTime={previousDate}>{formatAbsoluteDate(previousDate)}</time>.
+        <time dateTime={previousDate} className="font-mono text-ink">
+          {formatAbsoluteDate(previousDate)}
+        </time>
+        .
         {comparingOther ? ' No usa la auditoría elegida en el selector de comparación.' : null}
       </p>
       {loadError ? <AiNotice>No se pudo cargar el resumen guardado. Puedes volver a generarlo.</AiNotice> : null}
@@ -36,7 +39,7 @@ export function ChangesSection({ siteId, auditId, report, previousDate, comparin
         <AiNotice>No se pudo mostrar el resumen guardado. Regenéralo para verlo.</AiNotice>
       ) : null}
       {report.status === 'none' && !loadError ? (
-        <p className="text-zinc-700 dark:text-zinc-300">Aún no hay un resumen de cambios generado.</p>
+        <p className="text-ink-muted">Aún no hay un resumen de cambios generado.</p>
       ) : null}
       {report.status === 'ok' ? <ChangeSummary summary={report.data} /> : null}
       <GenerateReportForm kind="changes" siteId={siteId} auditId={auditId} hasReport={report.status !== 'none'} />

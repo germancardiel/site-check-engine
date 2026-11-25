@@ -9,11 +9,12 @@ import { AuditSiteForm } from '@/components/sites/audit-site-form'
 import { BackLink } from '@/components/ui/back-link'
 import { buildHistory, HISTORY_LIMIT, type HistoryAudit } from '@/lib/audit/history'
 import { siteDisplayName } from '@/lib/format'
+import { SITE_NAME } from '@/lib/site'
 import { createClient } from '@/lib/supabase/server'
 import { siteIdSchema } from '@/lib/validation/site'
 
 export const metadata: Metadata = {
-  title: 'Sitio · Faro',
+  title: `Sitio · ${SITE_NAME}`,
 }
 
 // `auditSite` can take up to ~10 s per page fetch plus auxiliary files.
@@ -71,30 +72,41 @@ async function SiteContent({ params }: SitePageProps) {
 
   return (
     <>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight break-words">{displayName}</h1>
-          <p className="text-sm break-all text-zinc-700 dark:text-zinc-300">{site.url}</p>
+      <header className="flex flex-col gap-5 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-2">
+          <h1 className="font-display text-4xl font-semibold tracking-display break-words sm:text-5xl">{displayName}</h1>
+          <p className="font-mono text-sm break-all text-ink-muted">{site.url}</p>
         </div>
-        {history.length > 0 ? <AuditSiteForm siteId={site.id} siteName={displayName} /> : null}
+        {history.length > 0 ? (
+          <AuditSiteForm siteId={site.id} siteName={displayName} label="Volver a auditar" variant="primary" />
+        ) : null}
       </header>
 
       {history.length === 0 ? (
-        <section className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">
-          <p className="text-zinc-700 dark:text-zinc-300">Este sitio aún no tiene auditorías.</p>
-          <AuditSiteForm siteId={site.id} siteName={displayName} />
+        <section
+          aria-labelledby="no-audits-title"
+          className="flex flex-col items-start gap-3 rounded-md border border-line p-6 sm:p-8"
+        >
+          <h2 id="no-audits-title" className="text-lg font-semibold">
+            Este sitio aún no tiene auditorías.
+          </h2>
+          <p className="max-w-prose text-ink-muted">
+            Lanza la primera: en unos segundos tendrás la nota de SEO, la de IA y la lista de lo que hay que arreglar.
+          </p>
+          <AuditSiteForm siteId={site.id} siteName={displayName} label="Auditar ahora" variant="primary" />
         </section>
       ) : (
         <>
           <section aria-labelledby="evolution-title" className="flex flex-col gap-4">
-            <h2 id="evolution-title" className="text-lg font-semibold">
+            <h2 id="evolution-title" className="text-xl font-semibold">
               Evolución
             </h2>
             <ScoreChart audits={history} />
           </section>
           <section aria-labelledby="history-title" className="flex flex-col gap-4">
-            <h2 id="history-title" className="text-lg font-semibold">
-              Historial
+            <h2 id="history-title" className="flex items-baseline gap-3 text-xl font-semibold">
+              Historial{' '}
+              <span className="font-mono text-sm font-normal text-ink-muted tabular-nums">{history.length}</span>
             </h2>
             <AuditHistory entries={history} siteId={site.id} now={new Date()} />
           </section>
@@ -106,9 +118,9 @@ async function SiteContent({ params }: SitePageProps) {
 
 export default function SitePage({ params }: SitePageProps) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
+    <div className="mx-auto flex w-full max-w-app flex-1 flex-col gap-10 px-4 py-10 sm:px-6 sm:py-14">
       <BackLink href="/sitios">Volver a tus sitios</BackLink>
-      <Suspense fallback={<DetailSkeleton label="Cargando el sitio…" />}>
+      <Suspense fallback={<DetailSkeleton variant="site" label="Cargando el sitio…" />}>
         <SiteContent params={params} />
       </Suspense>
     </div>

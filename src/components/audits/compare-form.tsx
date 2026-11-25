@@ -1,4 +1,6 @@
 import Form from 'next/form'
+import { buttonClass } from '@/components/ui/button-styles'
+import { INPUT_CLASS } from '@/components/ui/text-field'
 import { formatAbsoluteDate } from '@/lib/format'
 
 export type CompareOption = { id: string; created_at: string; score: number | null }
@@ -15,16 +17,11 @@ export function CompareForm({ action, options, selectedId }: CompareFormProps) {
 
   return (
     <Form action={action} className="flex flex-wrap items-end gap-3">
-      <div className="flex min-w-0 flex-col gap-1">
-        <label htmlFor="comparar" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <label htmlFor="comparar" className="text-sm font-medium text-ink">
           Comparar con otra auditoría
         </label>
-        <select
-          id="comparar"
-          name="comparar"
-          defaultValue={selectedId}
-          className="max-w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-base text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-white"
-        >
+        <select id="comparar" name="comparar" defaultValue={selectedId} className={`${INPUT_CLASS} max-w-full font-mono text-sm`}>
           {options.map((option) => (
             <option key={option.id} value={option.id}>
               {formatAbsoluteDate(option.created_at)} · Nota {option.score ?? '–'}
@@ -32,10 +29,7 @@ export function CompareForm({ action, options, selectedId }: CompareFormProps) {
           ))}
         </select>
       </div>
-      <button
-        type="submit"
-        className="inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:focus-visible:outline-white"
-      >
+      <button type="submit" className={buttonClass('secondary')}>
         Comparar
       </button>
     </Form>

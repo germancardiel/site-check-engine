@@ -1,13 +1,15 @@
 import Link from 'next/link'
+import { SITE_NAME } from '@/lib/site'
 
-const LINK_CLASS =
-  'rounded-sm underline underline-offset-4 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:hover:text-zinc-100 dark:focus-visible:outline-white'
+const LINK_CLASS = 'rounded-sm text-ink-muted underline decoration-line-strong transition-colors duration-200 ease-out hover:text-ink hover:decoration-ink'
 
 export function LandingFooter() {
   return (
-    <footer className="w-full border-t border-zinc-200 dark:border-zinc-800">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 text-sm text-zinc-700 sm:flex-row sm:items-center sm:justify-between dark:text-zinc-300">
-        <p>Faro · Auditoría SEO y de visibilidad para asistentes de IA.</p>
+    <footer className="w-full border-t border-line">
+      <div className="mx-auto flex w-full max-w-landing flex-col gap-4 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <p className="text-ink-muted">
+          <span className="font-semibold text-ink">{SITE_NAME}</span> · Auditoría SEO y de visibilidad para asistentes de IA.
+        </p>
         <nav aria-label="Pie de página">
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             <li>
@@ -21,7 +23,7 @@ export function LandingFooter() {
               </Link>
             </li>
             <li>
-              <a href="/llms.txt" className={LINK_CLASS}>
+              <a href="/llms.txt" className={`${LINK_CLASS} font-mono text-xs`}>
                 llms.txt
               </a>
             </li>

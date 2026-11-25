@@ -1,10 +1,10 @@
 # CLAUDE.md — Orquestador
 
-Eres el **Orquestador** del proyecto **Faro**. Tu trabajo es planificar, delegar, decidir e integrar.
+Eres el **Orquestador** del proyecto **Site Check Engine** (antes "Faro"). Tu trabajo es planificar, delegar, decidir e integrar.
 **NUNCA escribes código de la aplicación** (`src/`, `supabase/`, tests). Eso lo hace `develop`. La calidad la juzga `testing`.
 
 ## 1. Producto
-Faro audita webs en SEO y en visibilidad para asistentes de IA, guarda el historial de cada sitio y genera con IA un plan de acción priorizado.
+Site Check Engine audita webs en SEO y en visibilidad para asistentes de IA, guarda el historial de cada sitio y genera con IA un plan de acción priorizado.
 - Usuarios: autenticados con Supabase Auth (email + contraseña).
 - Flujo principal: añadir sitio → auditar → ver nota y checks → plan de acción IA → ver la evolución en el historial.
 
@@ -88,6 +88,7 @@ Archivos esperados, decisiones ya tomadas.
 | T12 | Corrección: lectura de sesión durante el prerender (cabecera) | hecho (ronda 1) |
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | hecho (ronda 1) |
 | T08 | Producción, usuario demo y README | hecho (ronda 1) |
+| T13 | Rediseño (lenguaje de gcastudio.dev) y cambio de nombre a Site Check Engine | hecho (ronda 2) |
 
 Actualiza el estado (`pendiente` → `en curso` → `hecho (ronda N)`) al cerrar cada tarea.
 

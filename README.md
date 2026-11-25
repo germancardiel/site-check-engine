@@ -1,6 +1,6 @@
-# Faro
+# Site Check Engine
 
-Faro audita webs en **SEO técnico** y en **visibilidad para asistentes de IA**, guarda el historial de cada sitio y genera con IA un **plan de acción priorizado**.
+Site Check Engine audita webs en **SEO técnico** y en **visibilidad para asistentes de IA**, guarda el historial de cada sitio y genera con IA un **plan de acción priorizado**.
 
 Producción: <https://site-check-engine.vercel.app>
 
@@ -9,7 +9,7 @@ Producción: <https://site-check-engine.vercel.app>
 Flujo principal:
 
 1. **Añadir un sitio**: el usuario (registrado con email y contraseña) guarda una URL pública.
-2. **Auditar**: Faro descarga la página, su `robots.txt`, su `llms.txt` y su sitemap, y ejecuta los checks.
+2. **Auditar**: Site Check Engine descarga la página, su `robots.txt`, su `llms.txt` y su sitemap, y ejecuta los checks.
 3. **Ver la nota y los checks**: nota global de 0 a 100, nota SEO, nota de IA y cada check en `pass`, `warn` o `fail` con su recomendación.
 4. **Plan de acción con IA**: a partir de los checks, un modelo genera un plan priorizado (y, entre dos auditorías, un resumen de los cambios).
 5. **Historial**: la evolución de la nota en el tiempo y la comparación entre dos auditorías.
@@ -88,7 +88,7 @@ El esquema solo cambia con migraciones nuevas: nunca se editan las ya aplicadas.
 Están en `src/__smoke__/` con su propia configuración (`vitest.smoke.config.mts`). Comprueban:
 
 - Rutas públicas (`/`, `/login`, `/registro`, `/robots.txt`, `/sitemap.xml`, `/llms.txt`, `/opengraph-image`) → 200, una ruta inexistente → 404 y `/sitios` sin sesión → 307 a `/login`.
-- La autoauditoría: Faro se audita a sí mismo y todos los checks deben pasar (en `http` se exime solo el de HTTPS).
+- La autoauditoría: Site Check Engine se audita a sí mismo y todos los checks deben pasar (en `http` se exime solo el de HTTPS).
 - Con sesión del usuario demo: `/sitios` → 200 con su email y la página de su primer sitio, si tiene. **No escriben datos.**
 
 Toman `SMOKE_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DEMO_EMAIL` y `DEMO_PASSWORD` del entorno o de `.env.local`. Sin las credenciales del demo, la parte con sesión se omite con un aviso.
@@ -99,10 +99,10 @@ Contra producción:
 SMOKE_BASE_URL=https://site-check-engine.vercel.app npm run test:smoke
 ```
 
-En local, la protección SSRF no deja auditar `localhost`, así que la autoauditoría pide la instancia local con el nombre `faro-smoke.test` (solo ese origen se dirige al servidor local). Compila con ese nombre como URL pública para que la canónica coincida:
+En local, la protección SSRF no deja auditar `localhost`, así que la autoauditoría pide la instancia local con el nombre `sce-smoke.test` (solo ese origen se dirige al servidor local). Compila con ese nombre como URL pública para que la canónica coincida:
 
 ```bash
-NEXT_PUBLIC_SITE_URL=http://faro-smoke.test:3100 npm run build
+NEXT_PUBLIC_SITE_URL=http://sce-smoke.test:3100 npm run build
 npm start -- -p 3100
 # en otra terminal
 SMOKE_BASE_URL=http://localhost:3100 npm run test:smoke
@@ -147,6 +147,6 @@ Existe un usuario demo en Supabase para probar la aplicación con datos y para l
 ## Limitaciones conocidas
 
 - **Modelo gratuito lento**: `recursive/flint-v1.0` es un modelo de razonamiento del plan gratuito; generar un plan o un resumen puede tardar uno o dos minutos (timeout de 120 s).
-- **HTML sin JavaScript**: Faro analiza el HTML que devuelve el servidor, sin ejecutar JavaScript. Las webs que pintan su contenido solo en el cliente salen peor puntuadas (igual que las ven muchos rastreadores de IA).
+- **HTML sin JavaScript**: Site Check Engine analiza el HTML que devuelve el servidor, sin ejecutar JavaScript. Las webs que pintan su contenido solo en el cliente salen peor puntuadas (igual que las ven muchos rastreadores de IA).
 - **Límite de IA**: 10 generaciones (planes y resúmenes de cambios) por usuario y día.
 - **Frecuencia de auditorías**: una auditoría por sitio y minuto.
