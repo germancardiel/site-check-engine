@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MockLanguageModelV4 } from 'ai/test'
 import { diffAudits } from '@/lib/audit/diff'
-import { AI_MODEL, AI_TIMEOUT_MS } from '../config'
+import { AI_MODEL, AI_PENDING_HINT, AI_TIMEOUT_MS } from '../config'
 import { AiGenerationError, generateActionPlan, generateChangeSummary } from '../generate'
 import { PLAN_INSTRUCTIONS } from '../prompts'
 import { makeAudit, makeCheck, validChanges, validPlan } from './fixtures'
@@ -46,16 +46,20 @@ describe('generateActionPlan', () => {
     expect(JSON.stringify(call.prompt)).toContain('en español')
   })
 
-  it('usa por defecto el modelo de AI Gateway "anthropic/claude-haiku-5-5" con timeout de 30 s', async () => {
+  it('usa por defecto el modelo de AI Gateway "recursive/flint-v1.0" con timeout de 120 s', async () => {
     generateText.mockResolvedValueOnce({ output: validPlan })
     await expect(generateActionPlan(audit)).resolves.toEqual(validPlan)
-    expect(AI_MODEL).toBe('anthropic/claude-haiku-5-5')
-    expect(AI_TIMEOUT_MS).toBe(30_000)
+    expect(AI_MODEL).toBe('recursive/flint-v1.0')
+    expect(AI_TIMEOUT_MS).toBe(120_000)
     const options = generateText.mock.calls[0][0]
-    expect(options.model).toBe('anthropic/claude-haiku-5-5')
+    expect(options.model).toBe('recursive/flint-v1.0')
     expect(options.instructions).toBe(PLAN_INSTRUCTIONS)
     expect(options.abortSignal).toBeInstanceOf(AbortSignal)
     expect(options.output).toBeDefined()
+  })
+
+  it('avisa en la interfaz de que la generación puede tardar hasta un minuto', () => {
+    expect(AI_PENDING_HINT).toBe('Esto puede tardar hasta un minuto.')
   })
 
   it('lanza AiGenerationError(invalid_output) si la salida no cumple el esquema', async () => {

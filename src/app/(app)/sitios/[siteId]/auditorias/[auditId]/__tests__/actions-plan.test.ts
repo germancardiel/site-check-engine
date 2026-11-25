@@ -129,7 +129,7 @@ describe('generatePlan', () => {
       {
         method: 'upsert',
         args: [
-          { audit_id: AUDIT_ID, user_id: 'user-1', kind: 'plan', content: plan, model: 'anthropic/claude-haiku-5-5' },
+          { audit_id: AUDIT_ID, user_id: 'user-1', kind: 'plan', content: plan, model: 'recursive/flint-v1.0' },
           { onConflict: 'audit_id,kind' },
         ],
       },

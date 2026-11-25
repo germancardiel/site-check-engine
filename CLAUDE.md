@@ -13,7 +13,7 @@ Faro audita webs en SEO y en visibilidad para asistentes de IA, guarda el histor
 |---|---|
 | Framework | Next.js 16 (App Router), TypeScript strict, Tailwind CSS |
 | Datos y auth | Supabase (Postgres + RLS) con `@supabase/ssr` |
-| IA | AI SDK 7 (`ai`) + Vercel AI Gateway; modelo `anthropic/claude-haiku-5-5` |
+| IA | AI SDK 7 (`ai`) + Vercel AI Gateway; modelo `recursive/flint-v1.0` (plan gratuito; aprobado por el humano el 2026-11-25, antes `anthropic/claude-haiku-5-5`) |
 | Validación | zod |
 | Tests | Vitest |
 | Deploy | Vercel (producción pública) |
@@ -83,6 +83,7 @@ Archivos esperados, decisiones ya tomadas.
 | T05 | Detalle de auditoría, historial y comparación | hecho (ronda 1) |
 | T06 | Plan de acción y resumen de cambios con IA, con límites diarios | hecho (ronda 2) |
 | T10 | Corrección: hora actual durante el prerender (Blocking Route) | hecho (ronda 1) |
+| T11 | Cambiar el modelo de IA al plan gratuito (`recursive/flint-v1.0`) | hecho (ronda 1) |
 | T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | pendiente |
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | pendiente |
 | T08 | Producción, usuario demo y README | pendiente |

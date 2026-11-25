@@ -24,8 +24,9 @@ export const metadata: Metadata = {
   title: 'Auditoría · Faro',
 }
 
-// `auditSite` (re-audit) can take ~10 s per fetch; the AI actions wait up to 30 s for the model.
-export const maxDuration = 60
+// `auditSite` (re-audit) can take ~10 s per fetch; the AI actions wait up to `AI_TIMEOUT_MS` (120 s)
+// for the model, so 150 s leaves room for the quota refund after a timeout.
+export const maxDuration = 150
 
 const AUDIT_COLUMNS = 'id, site_id, status, score, seo_score, ai_score, checks, error, created_at'
 const OPTION_COLUMNS = 'id, created_at, score'
