@@ -5,6 +5,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type AuditStatus = 'ok' | 'error'
 
+export type AiReportKind = 'plan' | 'changes'
+
 export type Database = {
   public: {
     Tables: {
@@ -15,6 +17,7 @@ export type Database = {
           url: string
           name: string | null
           created_at: string
+          last_audit_started_at: string | null
         }
         Insert: {
           id?: string
@@ -22,6 +25,7 @@ export type Database = {
           url: string
           name?: string | null
           created_at?: string
+          last_audit_started_at?: string | null
         }
         Update: {
           id?: string
@@ -29,6 +33,7 @@ export type Database = {
           url?: string
           name?: string | null
           created_at?: string
+          last_audit_started_at?: string | null
         }
         Relationships: []
       }
@@ -79,9 +84,81 @@ export type Database = {
           },
         ]
       }
+      ai_reports: {
+        Row: {
+          id: string
+          audit_id: string
+          user_id: string
+          kind: AiReportKind
+          content: Json
+          model: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          audit_id: string
+          user_id?: string
+          kind: AiReportKind
+          content: Json
+          model: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          audit_id?: string
+          user_id?: string
+          kind?: AiReportKind
+          content?: Json
+          model?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'ai_reports_audit_id_fkey'
+            columns: ['audit_id']
+            isOneToOne: false
+            referencedRelation: 'audits'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      ai_usage: {
+        Row: {
+          user_id: string
+          day: string
+          count: number
+          refunds: number
+        }
+        Insert: {
+          user_id: string
+          day: string
+          count?: number
+          refunds?: number
+        }
+        Update: {
+          user_id?: string
+          day?: string
+          count?: number
+          refunds?: number
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      consume_ai_quota: {
+        Args: { p_limit: number }
+        Returns: number
+      }
+      refund_ai_quota: {
+        Args: never
+        Returns: undefined
+      }
+      claim_audit_slot: {
+        Args: { p_site_id: string }
+        Returns: boolean
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

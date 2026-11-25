@@ -45,6 +45,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-SEC-06 | B | Cada acción de servidor comprueba la sesión (`auth.getUser()`) y opera solo sobre los datos de ese usuario. Exentas: las actions que crean la sesión (login, registro) | Lectura de las actions |
 | D-SEC-07 | M | El HTML auditado nunca se renderiza con `dangerouslySetInnerHTML` | `grep -rn dangerouslySetInnerHTML src` → vacío |
 | D-SEC-08 | M | Los errores al usuario son genéricos; el detalle solo en `console.error` del servidor | Lectura de los `catch` |
+| D-SEC-09 | B | Los contadores y marcas de límites (cuotas, rate limits) no los puede modificar el usuario: `authenticated` no tiene `insert`/`update` sobre esas tablas o columnas, y solo se escriben mediante funciones `security definer` con `set search_path = ''` que usan `auth.uid()` y `now()` de Postgres. Toda función expuesta que devuelva cuota está acotada (no permite resetear el límite) | Lectura de grants, revokes y funciones en las migraciones |
 
 Ejemplo D-SEC-04:
 ```ts

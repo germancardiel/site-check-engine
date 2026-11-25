@@ -88,3 +88,8 @@ export function resolveComparisonTarget<T extends ComparisonCandidate>(
 export function hasCheckChanges(diff: AuditDiff): boolean {
   return diff.improved.length + diff.regressed.length + diff.added.length + diff.removed.length > 0
 }
+
+/** Fragment id of a check in the audit detail page, used by the AI plan to link to it. */
+export function checkAnchorId(checkId: string): string {
+  return `check-${checkId.replace(/[^A-Za-z0-9_-]/g, '-')}`
+}

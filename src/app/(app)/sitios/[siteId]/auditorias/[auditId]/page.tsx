@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, type ReactNode } from 'react'
+import { ChangesSection } from '@/components/ai/changes-section'
+import { PlanSection } from '@/components/ai/plan-section'
 import { AuditComparison } from '@/components/audits/audit-comparison'
 import { AuditScores } from '@/components/audits/audit-scores'
 import { CheckList } from '@/components/audits/check-list'
@@ -8,6 +10,7 @@ import { CompareForm, type CompareOption } from '@/components/audits/compare-for
 import { DetailSkeleton } from '@/components/audits/detail-skeleton'
 import { AuditSiteForm } from '@/components/sites/audit-site-form'
 import { BackLink } from '@/components/ui/back-link'
+import { madridDay, readAuditReports, remainingGenerations } from '@/lib/ai/reports'
 import { diffAudits, type AuditDiff } from '@/lib/audit/diff'
 import { resolveComparisonTarget } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
@@ -20,7 +23,7 @@ export const metadata: Metadata = {
   title: 'Auditoría · Faro',
 }
 
-// `auditSite` (re-audit button) can take up to ~10 s per page fetch plus auxiliary files.
+// `auditSite` (re-audit) can take ~10 s per fetch; the AI actions wait up to 30 s for the model.
 export const maxDuration = 60
 
 const AUDIT_COLUMNS = 'id, site_id, status, score, seo_score, ai_score, checks, error, created_at'
@@ -97,6 +100,21 @@ async function loadComparisonRows(supabase: Supabase, userId: string, audit: Aud
   return { requested: requested.data, previous: previous.data, options: options.data satisfies CompareOption[] }
 }
 
+/** AI reports and today's usage. A failure here never hides the audit (D-AI-05). */
+async function loadAiData(supabase: Supabase, userId: string, auditId: string) {
+  const [reports, usage] = await Promise.all([
+    supabase.from('ai_reports').select('kind, content, created_at').eq('audit_id', auditId).eq('user_id', userId),
+    supabase.from('ai_usage').select('count').eq('user_id', userId).eq('day', madridDay(new Date())).maybeSingle(),
+  ])
+  if (reports.error) console.error('[AuditPage] ai_reports', reports.error)
+  if (usage.error) console.error('[AuditPage] ai_usage', usage.error)
+  return {
+    loadError: Boolean(reports.error),
+    reports: readAuditReports(reports.error ? [] : (reports.data ?? [])),
+    remaining: usage.error ? null : remainingGenerations(usage.data?.count),
+  }
+}
+
 function compare(audit: AuditRow, checks: CheckResult[], target: AuditRow | null): Comparison {
   if (!target) return { kind: 'none' }
   const targetChecks = parseChecks(target.checks)
@@ -111,7 +129,9 @@ function compare(audit: AuditRow, checks: CheckResult[], target: AuditRow | null
   return { kind: 'ok', since: target.created_at, targetId: target.id, diff }
 }
 
-function ComparisonSection({ comparison, options, action }: { comparison: Comparison; options: CompareOption[]; action: string }) {
+type ComparisonSectionProps = { comparison: Comparison; options: CompareOption[]; action: string; aiSummary: ReactNode }
+
+function ComparisonSection({ comparison, options, action, aiSummary }: ComparisonSectionProps) {
   return (
     <section aria-labelledby="comparison-title" className="flex flex-col gap-4">
       <h2 id="comparison-title" className="text-xl font-semibold">
@@ -126,6 +146,7 @@ function ComparisonSection({ comparison, options, action }: { comparison: Compar
           No se pudo cargar la comparación. Prueba con otra auditoría.
         </p>
       ) : null}
+      {aiSummary}
       <CompareForm
         action={action}
         options={options}
@@ -153,19 +174,41 @@ async function OkAuditBody({ supabase, userId, audit, compareParam, action }: {
   }
 
   const requestedId = parseCompareParam(compareParam, audit.id)
-  const rows = await loadComparisonRows(supabase, userId, audit, requestedId)
+  const [rows, ai] = await Promise.all([
+    loadComparisonRows(supabase, userId, audit, requestedId),
+    loadAiData(supabase, userId, audit.id),
+  ])
   const target = resolveComparisonTarget(audit, rows.requested, rows.previous)
   const comparison = compare(audit, checks.checks, target?.audit ?? null)
+  const previous = resolveComparisonTarget(audit, null, rows.previous)?.audit ?? null
+  const aiSummary = previous ? (
+    <ChangesSection
+      siteId={audit.site_id}
+      auditId={audit.id}
+      report={ai.reports.changes}
+      previousDate={previous.created_at}
+      comparingOther={target !== null && target.audit.id !== previous.id}
+      loadError={ai.loadError}
+    />
+  ) : null
 
   return (
     <>
+      <PlanSection
+        siteId={audit.site_id}
+        auditId={audit.id}
+        report={ai.reports.plan}
+        checks={checks.checks}
+        remaining={ai.remaining}
+        loadError={ai.loadError}
+      />
       <section aria-labelledby="checks-title" className="flex flex-col gap-4">
         <h2 id="checks-title" className="text-xl font-semibold">
           Comprobaciones
         </h2>
         <CheckList checks={checks.checks} />
       </section>
-      <ComparisonSection comparison={comparison} options={rows.options} action={action} />
+      <ComparisonSection comparison={comparison} options={rows.options} action={action} aiSummary={aiSummary} />
     </>
   )
 }

@@ -1,10 +1,13 @@
-import { groupChecks, type CheckGroup } from '@/lib/audit/present'
+import { checkAnchorId, groupChecks, type CheckGroup } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
 import { CheckStatusBadge } from './check-status-badge'
 
 function CheckItem({ check }: { check: CheckResult }) {
   return (
-    <li className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+    <li
+      id={checkAnchorId(check.id)}
+      className="flex scroll-mt-4 flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h4 className="font-medium break-words text-zinc-900 dark:text-zinc-100">{check.title}</h4>
         <CheckStatusBadge status={check.status} />

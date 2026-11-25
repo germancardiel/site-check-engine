@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { diffAudits } from '../diff'
 import {
   CHECK_STATUS_LABEL,
+  checkAnchorId,
   groupChecks,
   hasCheckChanges,
   resolveComparisonTarget,
@@ -116,5 +117,12 @@ describe('hasCheckChanges', () => {
     expect(hasCheckChanges(diffAudits(snapshot([check('a', 'seo', 'pass')]), snapshot(before)))).toBe(true)
     expect(hasCheckChanges(diffAudits(snapshot([]), snapshot(before)))).toBe(true)
     expect(hasCheckChanges(diffAudits(snapshot(before), snapshot([])))).toBe(true)
+  })
+})
+
+describe('checkAnchorId', () => {
+  it('genera un id de ancla estable y seguro para el fragmento', () => {
+    expect(checkAnchorId('meta-description')).toBe('check-meta-description')
+    expect(checkAnchorId('og:title x')).toBe('check-og-title-x')
   })
 })

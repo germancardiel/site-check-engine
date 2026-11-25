@@ -13,8 +13,6 @@ import {
   type SiteActionState,
 } from '@/lib/validation/site'
 
-const AUDIT_COOLDOWN_MS = 60_000
-
 const SESSION_EXPIRED = 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
 const SITE_NOT_FOUND = 'No se encontró el sitio.'
 const DUPLICATE_SITE = 'Ya tienes este sitio.'
@@ -119,19 +117,13 @@ export async function auditSite(_: SiteActionState, formData: FormData): Promise
   if (siteError) console.error('[auditSite] site', siteError)
   if (siteError || !site) return { error: SITE_NOT_FOUND }
 
-  const since = new Date(Date.now() - AUDIT_COOLDOWN_MS).toISOString()
-  const { data: recent, error: recentError } = await supabase
-    .from('audits')
-    .select('id')
-    .eq('site_id', site.id)
-    .eq('user_id', user.id)
-    .gte('created_at', since)
-    .limit(1)
-  if (recentError) {
-    console.error('[auditSite] cooldown', recentError)
+  // Atomic rate limit with the database clock (no read-then-insert race).
+  const { data: claimed, error: claimError } = await supabase.rpc('claim_audit_slot', { p_site_id: site.id })
+  if (claimError) {
+    console.error('[auditSite] cooldown', claimError)
     return { error: 'No se pudo iniciar la auditoría. Inténtalo de nuevo.' }
   }
-  if (recent && recent.length > 0) return { error: RATE_LIMITED }
+  if (claimed !== true) return { error: RATE_LIMITED }
 
   const outcome = await runAudit(site.url)
   const { error: insertError } = await supabase
