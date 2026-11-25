@@ -1,0 +1,19 @@
+# deps / build
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# secretos: nunca al repositorio (D-SEC-01)
+.env*
+!.env.example
+
+# vercel / supabase local
+.vercel
+supabase/.temp/
+
+# sistema / editor
+.DS_Store
+.claude/settings.local.json
