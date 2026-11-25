@@ -6,7 +6,8 @@ type CookieMethods = {
   setAll: (cookies: CookieToSet[]) => void
 }
 
-const { createServerClient, cookieStore } = vi.hoisted(() => ({
+const { createServerClient, cookieStore, calls } = vi.hoisted(() => ({
+  calls: [] as string[],
   createServerClient: vi.fn<
     (url: string, key: string, options: { cookies: CookieMethods }) => { kind: string }
   >(() => ({ kind: 'server-client' })),
@@ -17,7 +18,17 @@ const { createServerClient, cookieStore } = vi.hoisted(() => ({
 }))
 
 vi.mock('@supabase/ssr', () => ({ createServerClient }))
-vi.mock('next/headers', () => ({ cookies: vi.fn(async () => cookieStore) }))
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => {
+    calls.push('cookies')
+    return cookieStore
+  }),
+}))
+vi.mock('next/server', () => ({
+  connection: vi.fn(async () => {
+    calls.push('connection')
+  }),
+}))
 
 import { createClient } from '@/lib/supabase/server'
 
@@ -30,6 +41,7 @@ function cookieMethods(): CookieMethods {
 describe('createClient (servidor)', () => {
   beforeEach(() => {
     createServerClient.mockClear()
+    calls.length = 0
     cookieStore.set.mockReset()
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://supabase.test')
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key')
@@ -80,5 +92,19 @@ describe('createClient (servidor)', () => {
     vi.mocked(headers.cookies).mockRejectedValueOnce(new Error('dynamic-usage'))
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '')
     await expect(createClient()).rejects.toThrow('dynamic-usage')
+  })
+
+  it('espera a la petición con connection() antes de leer las cookies (D-QA-08)', async () => {
+    await createClient()
+    expect(calls).toEqual(['connection', 'cookies'])
+  })
+
+  it('no lee las cookies ni el entorno si connection() detiene el prerender', async () => {
+    const server = await import('next/server')
+    vi.mocked(server.connection).mockRejectedValueOnce(new Error('prerender-stop'))
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '')
+    await expect(createClient()).rejects.toThrow('prerender-stop')
+    expect(calls).toEqual([])
+    expect(createServerClient).not.toHaveBeenCalled()
   })
 })

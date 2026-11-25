@@ -10,3 +10,4 @@
   - Smoke test sobre `next start` (o sobre producción) que pase el motor por la landing real, porque el test de CA2 monta el `<head>` a partir de `metadata`.
   - Valorar que una URL inexistente sin sesión devuelva 404 en lugar de 307 a `/login`; un crawler vería redirecciones en vez de 404.
 - Mejora futura (no bloquea): deduplicar `getUser` por petición con `React.cache`.
+- 2026-11-25: regresión detectada por el humano en `next dev` con sesión: Blocking Route en `UserEmail` (cabecera privada). Se corrige en T12.

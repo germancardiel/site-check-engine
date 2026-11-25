@@ -1,10 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { connection } from 'next/server'
 import { readSupabaseEnv } from './env'
 import type { Database } from './types'
 
 export async function createClient() {
-  // Read the request first so prerendering stops here instead of requiring env at build time.
+  // D-QA-08: auth-js reads `Date.now()` while checking the session, so wait for a real
+  // request before anything else. It also stops prerendering before env is required.
+  await connection()
   const cookieStore = await cookies()
   const { url, anonKey } = readSupabaseEnv()
 

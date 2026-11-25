@@ -85,6 +85,7 @@ Archivos esperados, decisiones ya tomadas.
 | T10 | Corrección: hora actual durante el prerender (Blocking Route) | hecho (ronda 1) |
 | T11 | Cambiar el modelo de IA al plan gratuito (`recursive/flint-v1.0`) | hecho (ronda 1) |
 | T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | hecho (ronda 1) |
+| T12 | Corrección: lectura de sesión durante el prerender (cabecera) | hecho (ronda 1) |
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | pendiente |
 | T08 | Producción, usuario demo y README | pendiente |
 
