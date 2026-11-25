@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
+import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { AuditHistory } from '@/components/audits/audit-history'
 import { DetailSkeleton } from '@/components/audits/detail-skeleton'
@@ -61,6 +62,8 @@ async function loadSite(siteId: string) {
 }
 
 async function SiteContent({ params }: SitePageProps) {
+  // Per-request render: the history shows times relative to now (D-QA-08).
+  await connection()
   const { siteId } = await params
   const { site, audits } = await loadSite(siteId)
   const displayName = siteDisplayName(site.name, site.url)

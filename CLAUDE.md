@@ -82,6 +82,7 @@ Archivos esperados, decisiones ya tomadas.
 | T04 | Sitios: crear, listar, borrar y ejecutar auditorías | hecho (ronda 1) |
 | T05 | Detalle de auditoría, historial y comparación | hecho (ronda 1) |
 | T06 | Plan de acción y resumen de cambios con IA, con límites diarios | hecho (ronda 2) |
+| T10 | Corrección: hora actual durante el prerender (Blocking Route) | hecho (ronda 1) |
 | T07 | Landing, estados vacío/carga/error, accesibilidad y responsive | pendiente |
 | T09 | Endurecer el fetcher contra DNS rebinding (se ejecuta antes de T08) | pendiente |
 | T08 | Producción, usuario demo y README | pendiente |

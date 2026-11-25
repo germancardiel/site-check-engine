@@ -32,8 +32,10 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime('no-es-fecha', NOW)).toBe('')
   })
 
-  it('usa la hora actual por defecto', () => {
-    expect(formatRelativeTime(new Date())).toBe('hace un momento')
+  it('calcula la diferencia respecto a la hora que recibe, no la del sistema', () => {
+    const date = '2026-11-25T11:00:00.000Z'
+    expect(formatRelativeTime(date, NOW)).toBe('hace 1 hora')
+    expect(formatRelativeTime(date, new Date('2026-11-25T11:00:30.000Z'))).toBe('hace un momento')
   })
 })
 

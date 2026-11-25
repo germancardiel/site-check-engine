@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
+import { connection } from 'next/server'
 import { Suspense, type ReactNode } from 'react'
 import { ChangesSection } from '@/components/ai/changes-section'
 import { PlanSection } from '@/components/ai/plan-section'
@@ -101,10 +102,10 @@ async function loadComparisonRows(supabase: Supabase, userId: string, audit: Aud
 }
 
 /** AI reports and today's usage. A failure here never hides the audit (D-AI-05). */
-async function loadAiData(supabase: Supabase, userId: string, auditId: string) {
+async function loadAiData(supabase: Supabase, userId: string, auditId: string, now: Date) {
   const [reports, usage] = await Promise.all([
     supabase.from('ai_reports').select('kind, content, created_at').eq('audit_id', auditId).eq('user_id', userId),
-    supabase.from('ai_usage').select('count').eq('user_id', userId).eq('day', madridDay(new Date())).maybeSingle(),
+    supabase.from('ai_usage').select('count').eq('user_id', userId).eq('day', madridDay(now)).maybeSingle(),
   ])
   if (reports.error) console.error('[AuditPage] ai_reports', reports.error)
   if (usage.error) console.error('[AuditPage] ai_usage', usage.error)
@@ -156,12 +157,13 @@ function ComparisonSection({ comparison, options, action, aiSummary }: Compariso
   )
 }
 
-async function OkAuditBody({ supabase, userId, audit, compareParam, action }: {
+async function OkAuditBody({ supabase, userId, audit, compareParam, action, now }: {
   supabase: Supabase
   userId: string
   audit: AuditRow
   compareParam: string | string[] | undefined
   action: string
+  now: Date
 }) {
   const checks = parseChecks(audit.checks)
   if (!checks.ok) {
@@ -176,7 +178,7 @@ async function OkAuditBody({ supabase, userId, audit, compareParam, action }: {
   const requestedId = parseCompareParam(compareParam, audit.id)
   const [rows, ai] = await Promise.all([
     loadComparisonRows(supabase, userId, audit, requestedId),
-    loadAiData(supabase, userId, audit.id),
+    loadAiData(supabase, userId, audit.id, now),
   ])
   const target = resolveComparisonTarget(audit, rows.requested, rows.previous)
   const comparison = compare(audit, checks.checks, target?.audit ?? null)
@@ -214,6 +216,9 @@ async function OkAuditBody({ supabase, userId, audit, compareParam, action }: {
 }
 
 async function AuditContent({ params, searchParams }: AuditPageProps) {
+  // Per-request render: relative time and today's AI quota depend on now (D-QA-08).
+  await connection()
+  const now = new Date()
   const [rawParams, query] = await Promise.all([params, searchParams])
   const { supabase, userId, site, audit } = await loadAudit(rawParams)
   const displayName = siteDisplayName(site.name, site.url)
@@ -226,7 +231,7 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
         <h1 className="text-2xl font-semibold tracking-tight break-words">Auditoría de {displayName}</h1>
         <p className="text-sm text-zinc-700 dark:text-zinc-300">
           <time dateTime={audit.created_at}>{formatAbsoluteDate(audit.created_at)}</time> ·{' '}
-          {formatRelativeTime(audit.created_at)}
+          {formatRelativeTime(audit.created_at, now)}
         </p>
         <p className="text-sm break-all text-zinc-700 dark:text-zinc-300">{site.url}</p>
       </header>
@@ -243,7 +248,7 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
       ) : (
         <>
           <AuditScores score={audit.score} seoScore={audit.seo_score} aiScore={audit.ai_score} size="lg" />
-          <OkAuditBody supabase={supabase} userId={userId} audit={audit} compareParam={query.comparar} action={action} />
+          <OkAuditBody supabase={supabase} userId={userId} audit={audit} compareParam={query.comparar} action={action} now={now} />
         </>
       )}
     </>

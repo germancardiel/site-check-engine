@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
+import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { AddSiteForm } from '@/components/sites/add-site-form'
 import type { SiteWithLatestAudit } from '@/components/sites/site-card'
@@ -20,6 +21,8 @@ const SITE_COLUMNS = 'id, url, name, created_at'
 const AUDIT_COLUMNS = 'id, status, score, seo_score, ai_score, error, created_at'
 
 async function SitesContent() {
+  // Per-request render: the list shows times relative to now (D-QA-08).
+  await connection()
   const supabase = await createClient()
   const {
     data: { user },

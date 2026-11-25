@@ -10,7 +10,7 @@ const RELATIVE_UNITS: Array<{ unit: Intl.RelativeTimeFormatUnit; seconds: number
 const relativeFormatter = new Intl.RelativeTimeFormat('es', { numeric: 'auto' })
 
 /** Formats `date` relative to `now` in Spanish, e.g. "hace 5 minutos" or "ayer". */
-export function formatRelativeTime(date: Date | string, now: Date = new Date()): string {
+export function formatRelativeTime(date: Date | string, now: Date): string {
   const target = typeof date === 'string' ? new Date(date) : date
   const diffSeconds = Math.round((target.getTime() - now.getTime()) / 1000)
   if (Number.isNaN(diffSeconds)) return ''

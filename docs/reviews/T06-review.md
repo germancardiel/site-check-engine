@@ -19,3 +19,4 @@
 - Pendiente antes de T08: probar con clave real que el Gateway acepta el JSON Schema de salida estructurada.
 - Migración `20261125200000_ai.sql` **sin aplicar**: la ejecuta el humano. Hasta entonces, `auditSite` falla, porque `claim_audit_slot` todavía no existe.
 - Sugerencia de testing descartada: no hace falta una regla de `revoke … from anon`, porque el proyecto no concede privilegios por defecto a `anon` (comprobado con 42501).
+- 2026-11-25: el humano aplicó `20261125200000_ai.sql`. Comprobado desde fuera: las 3 funciones existen y devuelven 42501 a `anon`; `ai_reports` y `ai_usage` también devuelven 42501 a `anon`.
