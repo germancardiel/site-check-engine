@@ -81,14 +81,14 @@ describe('auditSite', () => {
     expect(runAudit).not.toHaveBeenCalled()
   })
 
-  it('reclama el turno con rpc claim_audit_slot y no llama a runAudit si devuelve false', async () => {
+  it('inicia con rpc start_audit y no llama a runAudit si devuelve cooldown', async () => {
     signedIn()
     queueResults('sites', { data: site, error: null })
-    rpc.mockResolvedValue({ data: false, error: null })
+    rpc.mockResolvedValue({ data: 'cooldown', error: null })
     const result = await auditSite({}, form({ siteId: SITE_ID }))
     expect(result).toEqual({ error: 'Espera un minuto antes de volver a auditar este sitio.' })
     expect(rpc).toHaveBeenCalledTimes(1)
-    expect(rpc).toHaveBeenCalledWith('claim_audit_slot', { p_site_id: SITE_ID })
+    expect(rpc).toHaveBeenCalledWith('start_audit', { p_site_id: SITE_ID, p_limit: 15 })
     expect(from).not.toHaveBeenCalledWith('audits')
     expect(runAudit).not.toHaveBeenCalled()
     expect(revalidatePath).not.toHaveBeenCalled()
@@ -109,7 +109,44 @@ describe('auditSite', () => {
     rpc.mockResolvedValue({ data: null, error: { message: 'boom' } })
     const result = await auditSite({}, form({ siteId: SITE_ID }))
     expect(result).toEqual({ error: 'No se pudo iniciar la auditoría. Inténtalo de nuevo.' })
-    expect(console.error).toHaveBeenCalledWith('[auditSite] cooldown', { message: 'boom' })
+    expect(console.error).toHaveBeenCalledWith('[auditSite] start', { message: 'boom' })
+    expect(runAudit).not.toHaveBeenCalled()
+  })
+
+  it('rechaza la auditoría 16 del día con el mensaje de cuota y no llama a runAudit (CA2)', async () => {
+    signedIn()
+    queueResults('sites', { data: site, error: null })
+    rpc.mockResolvedValue({ data: 'quota', error: null })
+    const result = await auditSite({}, form({ siteId: SITE_ID }))
+    expect(result).toEqual({ error: 'Has alcanzado el límite de 15 auditorías por hoy. Vuelve mañana.' })
+    expect(rpc).toHaveBeenCalledWith('start_audit', { p_site_id: SITE_ID, p_limit: 15 })
+    expect(runAudit).not.toHaveBeenCalled()
+    expect(from).not.toHaveBeenCalledWith('audits')
+    expect(revalidatePath).not.toHaveBeenCalled()
+  })
+
+  it('cuenta las auditorías del día: 15 pasan y la 16 se rechaza sin llamar al motor', async () => {
+    signedIn()
+    let used = 0
+    rpc.mockImplementation(async () => ({ data: used < 15 ? (used++, 'ok') : 'quota', error: null }))
+    runAudit.mockResolvedValue({ status: 'ok', score: 80, seoScore: 90, aiScore: 70, checks })
+    for (let i = 0; i < 15; i++) {
+      queueResults('sites', { data: site, error: null })
+      queueResults('audits', { error: null })
+      expect(await auditSite({}, form({ siteId: SITE_ID }))).toEqual({ message: 'Auditoría completada.' })
+    }
+    queueResults('sites', { data: site, error: null })
+    const result = await auditSite({}, form({ siteId: SITE_ID }))
+    expect(result).toEqual({ error: 'Has alcanzado el límite de 15 auditorías por hoy. Vuelve mañana.' })
+    expect(runAudit).toHaveBeenCalledTimes(15)
+  })
+
+  it('devuelve "No se encontró el sitio." si start_audit responde not_found', async () => {
+    signedIn()
+    queueResults('sites', { data: site, error: null })
+    rpc.mockResolvedValue({ data: 'not_found', error: null })
+    const result = await auditSite({}, form({ siteId: SITE_ID }))
+    expect(result).toEqual({ error: 'No se encontró el sitio.' })
     expect(runAudit).not.toHaveBeenCalled()
   })
 
@@ -123,7 +160,7 @@ describe('auditSite', () => {
   it('inserta una auditoría ok con notas y checks y revalida /sitios', async () => {
     signedIn()
     queueResults('sites', { data: site, error: null })
-    rpc.mockResolvedValue({ data: true, error: null })
+    rpc.mockResolvedValue({ data: 'ok', error: null })
     queueResults('audits', { error: null })
     runAudit.mockResolvedValue({ status: 'ok', score: 80, seoScore: 90, aiScore: 70, checks })
     const result = await auditSite({}, form({ siteId: SITE_ID }))
@@ -154,7 +191,7 @@ describe('auditSite', () => {
   it('inserta también una auditoría fallida y devuelve su mensaje', async () => {
     signedIn()
     queueResults('sites', { data: site, error: null })
-    rpc.mockResolvedValue({ data: true, error: null })
+    rpc.mockResolvedValue({ data: 'ok', error: null })
     queueResults('audits', { error: null })
     runAudit.mockResolvedValue({ status: 'error', error: 'La página tardó demasiado en responder.' })
     const result = await auditSite({}, form({ siteId: SITE_ID }))
@@ -180,7 +217,7 @@ describe('auditSite', () => {
   it('devuelve un error genérico y lo registra si falla el insert', async () => {
     signedIn()
     queueResults('sites', { data: site, error: null })
-    rpc.mockResolvedValue({ data: true, error: null })
+    rpc.mockResolvedValue({ data: 'ok', error: null })
     const dbError = { code: '42501', message: 'new row violates row-level security policy' }
     queueResults('audits', { error: dbError })
     runAudit.mockResolvedValue({ status: 'ok', score: 80, seoScore: 90, aiScore: 70, checks })

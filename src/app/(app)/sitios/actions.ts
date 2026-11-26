@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { runAudit, type AuditOutcome } from '@/lib/audit'
+import { AUDIT_DAILY_LIMIT, AUDIT_LIMIT_MESSAGE, SITE_LIMIT_MESSAGE } from '@/lib/limits'
 import { createClient } from '@/lib/supabase/server'
 import type { TablesInsert } from '@/lib/supabase/types'
 import { firstIssueMessage } from '@/lib/validation/auth'
@@ -18,6 +19,13 @@ const SITE_NOT_FOUND = 'No se encontró el sitio.'
 const DUPLICATE_SITE = 'Ya tienes este sitio.'
 const RATE_LIMITED = 'Espera un minuto antes de volver a auditar este sitio.'
 const UNIQUE_VIOLATION = '23505'
+// Raised by the `sites_enforce_limit` trigger (migration 20261126000000_usage_limits.sql).
+const RAISE_EXCEPTION = 'P0001'
+const SITE_LIMIT_ERROR = 'site_limit_reached'
+
+function isSiteLimitError(error: { code?: string; message?: string }): boolean {
+  return error.code === RAISE_EXCEPTION && error.message === SITE_LIMIT_ERROR
+}
 
 /** Maps the engine result to an `audits` row; failed audits are stored too. */
 function toAuditRow(siteId: string, userId: string, outcome: AuditOutcome): TablesInsert<'audits'> {
@@ -71,6 +79,7 @@ export async function createSite(_: SiteActionState, formData: FormData): Promis
     .insert({ user_id: user.id, url: parsed.data.url, name: parsed.data.name })
   if (error) {
     if (error.code === UNIQUE_VIOLATION) return { error: DUPLICATE_SITE }
+    if (isSiteLimitError(error)) return { error: SITE_LIMIT_MESSAGE }
     console.error('[createSite]', error)
     return { error: 'No se pudo guardar el sitio. Inténtalo de nuevo.' }
   }
@@ -117,13 +126,18 @@ export async function auditSite(_: SiteActionState, formData: FormData): Promise
   if (siteError) console.error('[auditSite] site', siteError)
   if (siteError || !site) return { error: SITE_NOT_FOUND }
 
-  // Atomic rate limit with the database clock (no read-then-insert race).
-  const { data: claimed, error: claimError } = await supabase.rpc('claim_audit_slot', { p_site_id: site.id })
-  if (claimError) {
-    console.error('[auditSite] cooldown', claimError)
+  // Daily quota + per-site cooldown, atomic in the database with its clock (D-SEC-10).
+  const { data: started, error: startError } = await supabase.rpc('start_audit', {
+    p_site_id: site.id,
+    p_limit: AUDIT_DAILY_LIMIT,
+  })
+  if (startError) {
+    console.error('[auditSite] start', startError)
     return { error: 'No se pudo iniciar la auditoría. Inténtalo de nuevo.' }
   }
-  if (claimed !== true) return { error: RATE_LIMITED }
+  if (started === 'quota') return { error: AUDIT_LIMIT_MESSAGE }
+  if (started === 'not_found') return { error: SITE_NOT_FOUND }
+  if (started !== 'ok') return { error: RATE_LIMITED }
 
   // Server action (not prerendered): reading the clock here is safe; `src/lib` receives it (D-QA-08).
   const outcome = await runAudit(site.url, { now: new Date() })

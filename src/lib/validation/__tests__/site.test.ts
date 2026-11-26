@@ -16,7 +16,7 @@ describe('siteSchema — casos válidos y normalización', () => {
     ['https://ejemplo.com/blog/#seccion', 'https://ejemplo.com/blog/'],
     ['https://ejemplo.com/?q=1#x', 'https://ejemplo.com?q=1'],
     ['https://ejemplo.com:443/', 'https://ejemplo.com'],
-    ['ejemplo.com:8080/ruta', 'https://ejemplo.com:8080/ruta'],
+    ['http://ejemplo.com:80/ruta', 'http://ejemplo.com/ruta'],
   ])('normaliza %s → %s', (input, expected) => {
     const result = parseUrl(input)
     expect(result.success).toBe(true)
@@ -68,6 +68,20 @@ describe('siteSchema — casos inválidos', () => {
 })
 
 describe('normalizeSiteUrl', () => {
+  const PORT_ERROR = 'Solo se admiten los puertos por defecto (80 para http y 443 para https).'
+
+  it.each(['https://ejemplo.com:22', 'http://ejemplo.com:8080', 'ejemplo.com:8080/ruta', 'http://ejemplo.com:443', 'https://ejemplo.com:80'])(
+    'rechaza el puerto no por defecto de %s (D-SEC-11)',
+    (input) => {
+      expect(normalizeSiteUrl(input)).toEqual({ ok: false, error: PORT_ERROR })
+    },
+  )
+
+  it('normaliza https://ejemplo.com:443 y http://ejemplo.com:80 sin puerto', () => {
+    expect(normalizeSiteUrl('https://ejemplo.com:443')).toEqual({ ok: true, url: 'https://ejemplo.com' })
+    expect(normalizeSiteUrl('http://ejemplo.com:80')).toEqual({ ok: true, url: 'http://ejemplo.com' })
+  })
+
   it('acepta IPv6 entre corchetes (el fetcher decide si se puede auditar)', () => {
     expect(normalizeSiteUrl('https://[2001:db8::1]/')).toEqual({
       ok: true,

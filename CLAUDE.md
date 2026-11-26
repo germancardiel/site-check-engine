@@ -91,7 +91,7 @@ Archivos esperados, decisiones ya tomadas.
 | T13 | Rediseño (lenguaje de gcastudio.dev) y cambio de nombre a Site Check Engine | hecho (ronda 2) |
 | T14 | Auditoría de 10 apartados con bibliografía, evidencias y vista estilo GCA Studio | hecho (ronda 2) |
 | T15 | Descargar el Plan de acción en Markdown | hecho (ronda 1) |
-| T16 | Límites de uso y endurecimiento de datos (auditoría 2026-11-26) | pendiente |
+| T16 | Límites de uso y endurecimiento de datos (auditoría 2026-11-26) | hecho (ronda 1) |
 | T17 | Cabeceras de seguridad y caché | pendiente |
 | T18 | Cuenta: recuperar contraseña y confirmar email | pendiente |
 | T19 | Formularios accesibles | pendiente |

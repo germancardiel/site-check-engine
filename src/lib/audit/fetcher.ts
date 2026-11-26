@@ -35,10 +35,14 @@ function parseHttpUrl(raw: string): URL {
 }
 
 /**
- * Static SSRF checks for the host of `url` (D-SEC-05): `localhost` and blocked IP literals.
+ * Static SSRF checks for the host of `url` (D-SEC-05): `localhost`, blocked IP literals and
+ * non-default ports (D-SEC-11; `URL` leaves `port` empty for 80/http and 443/https).
  * Hostnames are resolved and validated later, once, by the socket's `lookup` (no TOCTOU).
  */
 export function assertPublicHost(url: URL): void {
+  if (url.port !== '') {
+    throw new AuditFetchError('BLOCKED_HOST', `Blocked port: ${url.port}`)
+  }
   const hostname = url.hostname.replace(/^\[|\]$/g, '')
   if (!hostname || isLocalHostname(hostname)) {
     throw new AuditFetchError('BLOCKED_HOST', `Blocked host: ${hostname}`)

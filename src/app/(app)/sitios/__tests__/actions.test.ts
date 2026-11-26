@@ -83,6 +83,24 @@ describe('createSite', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
+  it('con 10 sitios, el 11.º falla en la BD y devuelve el mensaje del límite (CA5)', async () => {
+    signedIn()
+    queueResults('sites', { error: { code: 'P0001', message: 'site_limit_reached' } })
+    const result = await createSite({}, form({ url: 'ejemplo.com' }))
+    expect(result).toEqual({ error: 'Has llegado al máximo de 10 sitios. Borra uno para añadir otro.' })
+    expect(console.error).not.toHaveBeenCalled()
+    expect(revalidatePath).not.toHaveBeenCalled()
+  })
+
+  it('otra excepción P0001 no se confunde con el límite de sitios', async () => {
+    signedIn()
+    const dbError = { code: 'P0001', message: 'otra cosa' }
+    queueResults('sites', { error: dbError })
+    const result = await createSite({}, form({ url: 'ejemplo.com' }))
+    expect(result).toEqual({ error: 'No se pudo guardar el sitio. Inténtalo de nuevo.' })
+    expect(console.error).toHaveBeenCalledWith('[createSite]', dbError)
+  })
+
   it('devuelve un error genérico y lo registra si Supabase falla', async () => {
     signedIn()
     const dbError = { code: '42501', message: 'permission denied for table sites' }

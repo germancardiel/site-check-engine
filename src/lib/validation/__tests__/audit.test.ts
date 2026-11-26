@@ -64,6 +64,34 @@ describe('checksSchema / parseChecks (CA4)', () => {
     }
   })
 
+  it('descarta los docs que no son http/https y conserva el resto de la auditoría (CA9, D-SEC-12)', () => {
+    const result = parseChecks([
+      {
+        ...validCheck,
+        docs: [
+          { label: 'XSS', url: 'javascript:alert(1)' },
+          { label: 'Data', url: 'data:text/html,<script>alert(1)</script>' },
+          { label: 'Relativo', url: '/docs' },
+          { label: 'Sin url' },
+          'texto suelto',
+          { label: 'MDN', url: 'http://developer.mozilla.org/' },
+          validCheck.docs[0],
+        ],
+      },
+      { ...validCheck, id: 'ai.llms', category: 'ai', docs: [{ label: 'XSS', url: 'JavaScript:alert(1)' }] },
+    ])
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.checks).toHaveLength(2)
+      expect(result.checks[0].docs).toEqual([
+        { label: 'MDN', url: 'http://developer.mozilla.org/' },
+        validCheck.docs[0],
+      ])
+      expect(result.checks[0].message).toBe(validCheck.message)
+      expect(result.checks[1].docs).toEqual([])
+    }
+  })
+
   it('rechaza valores que no son un array', () => {
     expect(parseChecks(null).ok).toBe(false)
     expect(parseChecks({ checks: [] }).ok).toBe(false)

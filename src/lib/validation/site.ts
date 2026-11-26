@@ -6,6 +6,7 @@ export const SITE_URL_MAX_LENGTH = 2048
 const URL_ERROR = 'Introduce una URL válida, por ejemplo https://ejemplo.com.'
 const PROTOCOL_ERROR = 'Solo se admiten direcciones http:// o https://.'
 const CREDENTIALS_ERROR = 'La URL no puede incluir usuario ni contraseña.'
+const PORT_ERROR = 'Solo se admiten los puertos por defecto (80 para http y 443 para https).'
 const ID_ERROR = 'El sitio no es válido.'
 
 const SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:\/\//i
@@ -14,7 +15,8 @@ type NormalizeResult = { ok: true; url: string } | { ok: false; error: string }
 
 /**
  * Normalizes a user-typed site URL: adds `https://` when there is no scheme, lowercases the host,
- * drops the fragment and the trailing slash of the root path. Rejects non-http(s) and credentials.
+ * drops the fragment and the trailing slash of the root path. Rejects non-http(s), credentials
+ * and non-default ports.
  */
 export function normalizeSiteUrl(input: string): NormalizeResult {
   const raw = input.trim()
@@ -32,6 +34,8 @@ export function normalizeSiteUrl(input: string): NormalizeResult {
   if (!url.hostname.includes('.') && !url.hostname.startsWith('[')) {
     return { ok: false, error: URL_ERROR }
   }
+  // `URL` already drops the default port (80 for http, 443 for https); any other is rejected (D-SEC-11).
+  if (url.port !== '') return { ok: false, error: PORT_ERROR }
 
   url.hash = ''
   const path = url.pathname === '/' ? '' : url.pathname

@@ -7,6 +7,9 @@ export type AuditStatus = 'ok' | 'error'
 
 export type AiReportKind = 'plan' | 'changes'
 
+/** Result of the `start_audit` RPC. */
+export type StartAuditResult = 'ok' | 'quota' | 'cooldown' | 'not_found'
+
 export type Database = {
   public: {
     Tables: {
@@ -143,6 +146,24 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_usage: {
+        Row: {
+          user_id: string
+          day: string
+          count: number
+        }
+        Insert: {
+          user_id: string
+          day: string
+          count?: number
+        }
+        Update: {
+          user_id?: string
+          day?: string
+          count?: number
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -154,9 +175,14 @@ export type Database = {
         Args: never
         Returns: undefined
       }
+      /** Superseded by `start_audit` (T16); `authenticated` can no longer execute it. */
       claim_audit_slot: {
         Args: { p_site_id: string }
         Returns: boolean
+      }
+      start_audit: {
+        Args: { p_site_id: string; p_limit: number }
+        Returns: StartAuditResult
       }
     }
     Enums: Record<string, never>

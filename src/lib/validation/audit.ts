@@ -3,10 +3,28 @@ import { CATEGORY_IDS } from '@/lib/audit/categories'
 import { deriveRecommendation } from '@/lib/audit/checks'
 import type { CategoryId, CheckResult } from '@/lib/audit/types'
 
+/** True only for absolute `http:`/`https:` URLs (D-SEC-12: these end up in `href`). */
+function isHttpUrl(value: string): boolean {
+  try {
+    const { protocol } = new URL(value)
+    return protocol === 'http:' || protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 const docLinkSchema = z.object({
   label: z.string(),
-  url: z.string(),
+  url: z.string().refine(isHttpUrl),
 })
+
+/** Keeps the valid doc links and drops the rest, so one bad link does not invalidate the audit. */
+const docLinksSchema = z.array(z.unknown()).transform((items) =>
+  items.flatMap((item) => {
+    const parsed = docLinkSchema.safeParse(item)
+    return parsed.success ? [parsed.data] : []
+  }),
+)
 
 const evidenceItemSchema = z.object({
   label: z.string(),
@@ -24,7 +42,7 @@ const rawCheckResultSchema = z.object({
   evidence: z.string().optional(),
   items: z.array(evidenceItemSchema).optional(),
   fix: z.string().optional(),
-  docs: z.array(docLinkSchema).optional(),
+  docs: docLinksSchema.optional(),
   recommendation: z.string().optional(),
 })
 
