@@ -36,7 +36,7 @@ describe('buildChartData', () => {
     expect(total?.polyline).toBe('10,110 190,10')
     const seo = data.series.find((series) => series.key === 'seo')
     expect(seo?.points.map((point) => point.y)).toEqual([60, 20])
-    expect(data.series.map((series) => series.label)).toEqual(['Nota total', 'SEO', 'IA'])
+    expect(data.series.map((series) => series.label)).toEqual(['Puntuación', 'SEO', 'IA'])
   })
 
   it('reparte los puntos en x de forma uniforme', () => {
@@ -55,7 +55,7 @@ describe('buildChartData', () => {
 
   it('resume la tendencia en el aria-label', () => {
     const data = buildChartData([row(6, 78, 80, 75), row(5, 70, 72, 60), row(1, 54, 60, 48), row(2, 58, 60, 50), row(3, 60, 61, 55), row(4, 65, 66, 58)])
-    expect(data?.ariaLabel).toBe('Nota total de 54 a 78 en 6 auditorías. SEO de 60 a 80. IA de 48 a 75.')
+    expect(data?.ariaLabel).toBe('Puntuación de 54 a 78 en 6 auditorías. SEO de 60 a 80. IA de 48 a 75.')
   })
 
   it('genera las marcas del eje y y las fechas extremas', () => {

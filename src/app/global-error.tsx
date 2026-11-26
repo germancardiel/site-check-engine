@@ -11,7 +11,13 @@ export default function GlobalError({ retry }: { error: unknown; retry: () => vo
       <body className="flex min-h-full flex-col bg-ground font-sans text-ink">
         <title>{`Algo ha fallado · ${SITE_NAME}`}</title>
         <main id="contenido" className="flex flex-1 flex-col">
-          <RouteError title="Algo ha fallado" message={`No se pudo cargar ${SITE_NAME}.`} onRetry={() => retry()} />
+          <RouteError
+            title={`No se pudo cargar ${SITE_NAME}`}
+            message="La aplicación no ha respondido como esperábamos."
+            onRetry={() => retry()}
+            backHref="/"
+            backLabel="Ir al inicio"
+          />
         </main>
       </body>
     </html>

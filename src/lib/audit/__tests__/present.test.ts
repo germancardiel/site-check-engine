@@ -6,6 +6,8 @@ import {
   checkAnchorId,
   groupCatalog,
   groupChecks,
+  issuesCountLabel,
+  NO_SCORE_LABEL,
   hasCheckChanges,
   prioritizeChecks,
   reportToMarkdown,
@@ -85,12 +87,14 @@ describe('prioritizeChecks y groupChecks', () => {
     expect(groups[9].passed.map((c) => c.id)).toEqual(['a1'])
   })
 
-  it('tiene etiquetas para los 5 estados', () => {
+  it('tiene etiquetas para los 5 estados (T21 CA5: un check fail muestra "Falla", no "Error")', () => {
     expect(CHECK_STATUS_LABEL).toEqual(STATUS_LABEL)
+    expect(STATUS_LABEL.fail).toBe('Falla')
+    expect(Object.values(STATUS_LABEL)).not.toContain('Error')
     expect(STATUS_LABEL).toEqual({
       pass: 'Correcto',
       warn: 'Mejorable',
-      fail: 'Error',
+      fail: 'Falla',
       na: 'No aplica',
       error: 'No evaluable',
     })
@@ -118,7 +122,11 @@ describe('buildAuditReport y reportToMarkdown (CA5)', () => {
     const md = reportToMarkdown(report)
     expect(md).toContain('# Auditoría SEO: https://example.com/')
     expect(md).toContain('**Puntuación global: 40/100')
-    expect(md).toContain('Nota limitada a 40')
+    expect(md).toContain('Puntuación limitada a 40')
+    expect(md).toContain('| Apartado | Puntuación | Aspectos a mejorar |')
+    expect(md).toContain(`| ${NO_SCORE_LABEL} | 0 |`)
+    expect(md).not.toContain('N/A')
+    expect(md).toContain('Meta robots noindex: Falla')
     expect(md).toContain('Aviso de prueba')
     expect(md).toContain('## Resumen por apartado')
     expect(md).toContain('## Aspectos a mejorar (1)')
@@ -160,5 +168,17 @@ describe('resolveComparisonTarget, hasCheckChanges, checkAnchorId y groupCatalog
       [1, 'crawl', 1],
       [10, 'ai', 1],
     ])
+  })
+})
+
+describe('issuesCountLabel y NO_SCORE_LABEL (T21)', () => {
+  it('da un texto accesible con "aspectos a mejorar" en singular y plural', () => {
+    expect(issuesCountLabel(1)).toBe('1 aspecto a mejorar')
+    expect(issuesCountLabel(3)).toBe('3 aspectos a mejorar')
+    expect(issuesCountLabel(0)).toBe('Sin aspectos a mejorar')
+  })
+
+  it('una categoría sin nota se muestra como "Sin datos"', () => {
+    expect(NO_SCORE_LABEL).toBe('Sin datos')
   })
 })

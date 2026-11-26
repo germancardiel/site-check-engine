@@ -96,7 +96,7 @@ Archivos esperados, decisiones ya tomadas.
 | T18 | Cuenta: recuperar contraseña y confirmar email | hecho (ronda 2) |
 | T19 | Formularios accesibles | hecho (ronda 1) |
 | T20 | Flujos de auditoría e IA | hecho (ronda 1) |
-| T21 | Pulido de textos y accesibilidad | pendiente |
+| T21 | Pulido de textos y accesibilidad | hecho (ronda 1) |
 
 Actualiza el estado (`pendiente` → `en curso` → `hecho (ronda N)`) al cerrar cada tarea.
 

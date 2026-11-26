@@ -42,7 +42,7 @@ import * as ogImage from '@/app/opengraph-image'
 import Home, { metadata as pageMetadata } from '@/app/page'
 import robots from '@/app/robots'
 import sitemap from '@/app/sitemap'
-import { SessionCtas } from '@/components/landing/session-ctas'
+import { HeaderSessionLink, SessionCtas } from '@/components/landing/session-ctas'
 import { runAudit } from '@/lib/audit'
 import { type TransportHandler, mockLookup, mockTransport } from '@/lib/audit/__tests__/fixtures/helpers'
 import { CHECK_CATALOG } from '@/lib/audit/checks'
@@ -230,7 +230,7 @@ describe('informe de ejemplo de la landing', () => {
 
   it('muestra las dos notas como medidores accesibles', () => {
     const meters = $()('figure [role="meter"]')
-    expect(meters.map((_, el) => $()(el).attr('aria-label')).get()).toEqual(['Nota SEO', 'Nota IA'])
+    expect(meters.map((_, el) => $()(el).attr('aria-label')).get()).toEqual(['Puntuación SEO', 'Puntuación IA'])
     const specimen = buildSpecimen()
     expect(meters.map((_, el) => Number($()(el).attr('aria-valuenow'))).get()).toEqual([specimen.seoScore, specimen.aiScore])
   })
@@ -243,6 +243,21 @@ describe('informe de ejemplo de la landing', () => {
 })
 
 describe('CTA según la sesión', () => {
+  it('la cabecera muestra "Entrar" en el HTML estático y "Ir a mis sitios" con sesión (T21 CA11)', async () => {
+    const header = parseHtml(renderLanding())('header')
+    const login = header.find('a[href="/login"]')
+    expect(login.text()).toBe('Entrar')
+    expect(login.attr('class')).toContain('min-h-10')
+
+    connection.resolve = true
+    expect(renderToStaticMarkup(await HeaderSessionLink())).toContain('>Entrar<')
+    session.user = { id: 'u1' }
+    const signedIn = renderToStaticMarkup(await HeaderSessionLink())
+    expect(signedIn).toContain('href="/sitios"')
+    expect(signedIn).toContain('Ir a mis sitios')
+    expect(signedIn).not.toContain('Entrar')
+  })
+
   it('un usuario con sesión ve "Ir a tus sitios" en lugar de "Entrar" y "Crear cuenta"', async () => {
     connection.resolve = true
     session.user = { id: 'u1' }

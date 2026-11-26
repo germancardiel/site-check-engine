@@ -1,5 +1,5 @@
 import { CATEGORY_BY_ID } from '@/lib/audit/categories'
-import { sortChecks } from '@/lib/audit/present'
+import { NO_SCORE_LABEL, sortChecks } from '@/lib/audit/present'
 import type { CategoryResult } from '@/lib/audit/types'
 import { cn } from '@/lib/utils'
 import { CategoryIcon } from './category-icons'
@@ -36,7 +36,7 @@ export function CategoryAccordion({
   const checks = sortChecks(category.checks)
   const panelId = `cat-panel-${category.id}`
   return (
-    <section id={`cat-${category.id}`} className="scroll-mt-24 rounded-md border border-line bg-panel">
+    <section id={`cat-${category.id}`} tabIndex={-1} className="scroll-mt-24 rounded-md border border-line bg-panel">
       <h3>
         <button
           type="button"
@@ -50,19 +50,18 @@ export function CategoryAccordion({
             {meta.number}. {category.title}
           </span>
           <span className={cn('font-display text-lg font-semibold tabular-nums', scoreColor(category.score))}>
-            {category.score ?? 'N/A'}
+            {category.score ?? NO_SCORE_LABEL}
             <span className="text-xs font-normal text-ink-muted">/100</span>
           </span>
           <ChevronDownIcon open={open} />
         </button>
       </h3>
-      {open ? (
-        <ul id={panelId} className="border-t border-line px-4 md:px-5">
-          {checks.map((c) => (
-            <CheckRow key={c.id} check={c} />
-          ))}
-        </ul>
-      ) : null}
+      {/* Always rendered (hidden when closed) so `aria-controls` points to an existing element. */}
+      <ul id={panelId} hidden={!open} className="border-t border-line px-4 md:px-5">
+        {checks.map((c) => (
+          <CheckRow key={c.id} check={c} />
+        ))}
+      </ul>
     </section>
   )
 }

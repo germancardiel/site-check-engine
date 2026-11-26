@@ -17,7 +17,7 @@ export function CheckCatalog() {
               {group.number}. {group.title}
             </h3>
             <span className="shrink-0 font-mono text-xs text-ink-muted tabular-nums">
-              {group.checks.length} checks · peso {group.weight}%
+              {group.checks.length} comprobaciones · peso {group.weight}%
             </span>
           </div>
           <ul className="grid gap-1.5">

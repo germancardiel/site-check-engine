@@ -12,6 +12,7 @@ import {
   form,
   from,
   generateActionPlan,
+  generateChangeSummary,
   getUser,
   okAudit,
   queueResults,
@@ -97,9 +98,9 @@ describe.each([
 })
 
 describe.each([
-  ['generatePlan', generatePlan, FAILED_MSG],
-  ['generateChanges', generateChanges, CHANGES_FAILED_MSG],
-] as const)('%s: nunca lanza al cliente (D-UX-12)', (scope, action, failedMsg) => {
+  ['generatePlan', generatePlan, FAILED_MSG, generateActionPlan],
+  ['generateChanges', generateChanges, CHANGES_FAILED_MSG, generateChangeSummary],
+] as const)('%s: nunca lanza al cliente (D-UX-12)', (scope, action, failedMsg, model) => {
   it('si la sesión o Supabase lanzan devuelve un error recuperable y lo registra', async () => {
     const boom = new Error('fetch failed')
     getUser.mockRejectedValue(boom)
@@ -114,7 +115,7 @@ describe.each([
     rpc.mockRejectedValue(new Error('socket hang up'))
     const result = await action({}, form())
     expect(result).toEqual({ error: failedMsg })
-    expect(generateActionPlan).not.toHaveBeenCalled()
+    expect(model).not.toHaveBeenCalled()
   })
 })
 

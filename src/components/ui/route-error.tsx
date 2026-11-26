@@ -2,13 +2,26 @@ import { StatusIcon } from './status-icon'
 import { buttonClass } from './button-styles'
 
 type RouteErrorProps = {
+  /** Describes what failed ("No se pudieron cargar tus sitios"), not just the page name. */
   title: string
   message: string
   onRetry: () => void
+  /** Secondary way out: "Volver a tus sitios" by default, "Ir al inicio" in the root errors. */
+  backHref?: string
+  backLabel?: string
 }
 
-/** Generic error state for `error.tsx` boundaries, with a "Reintentar" button. */
-export function RouteError({ title, message, onRetry }: RouteErrorProps) {
+/**
+ * Generic error state for `error.tsx` boundaries: "Reintentar" plus a link to leave the page.
+ * The link is a plain `<a>` (full navigation), which also works in `global-error.tsx`.
+ */
+export function RouteError({
+  title,
+  message,
+  onRetry,
+  backHref = '/sitios',
+  backLabel = 'Volver a tus sitios',
+}: RouteErrorProps) {
   return (
     <div className="mx-auto flex w-full max-w-app flex-1 flex-col items-start gap-6 px-4 py-12 sm:px-6 sm:py-16">
       <h1 className="font-display text-3xl font-semibold tracking-display text-balance sm:text-4xl">{title}</h1>
@@ -19,9 +32,14 @@ export function RouteError({ title, message, onRetry }: RouteErrorProps) {
           <p className="text-ink-muted">Ha ocurrido un error inesperado. Vuelve a intentarlo en unos segundos.</p>
         </div>
       </div>
-      <button type="button" onClick={onRetry} className={buttonClass('primary')}>
-        Reintentar
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={onRetry} className={buttonClass('primary')}>
+          Reintentar
+        </button>
+        <a href={backHref} className={buttonClass('secondary')}>
+          {backLabel}
+        </a>
+      </div>
     </div>
   )
 }

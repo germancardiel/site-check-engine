@@ -3,12 +3,13 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { parseHtml } from '@/lib/audit/parse'
 import { focusActionResult } from '@/lib/form-focus'
+import { filterAndPaginateSites, sitesFoundLabel } from '@/lib/sites/filter'
 import type { SiteActionState } from '@/lib/validation/site'
 import { SitesSkeleton } from '../sites-skeleton'
 
 vi.mock('@/app/(app)/sitios/actions', () => ({ auditSite: vi.fn(), deleteSite: vi.fn() }))
 
-import { SITE_LIST_TITLE_SELECTOR, SiteListView } from '../site-list'
+import { SITE_LIST_TITLE_SELECTOR, SiteListView, SiteSearchStatus } from '../site-list'
 import type { SiteWithLatestAudit } from '../site-row'
 
 const NOW = new Date('2026-11-25T12:00:00.000Z')
@@ -66,6 +67,23 @@ describe('Esqueleto de /sitios (D-UX-10)', () => {
   it('un único role="status" sin aria-live', () => {
     const $ = parseHtml(renderToStaticMarkup(<SitesSkeleton />))
     expect($('[role="status"]')).toHaveLength(1)
+    expect($('[aria-live]')).toHaveLength(0)
+  })
+})
+
+describe('Búsqueda de sitios: número de resultados (T21 CA8)', () => {
+  it('la lista tiene una línea role="status" junto al buscador, vacía hasta que el usuario busca', () => {
+    const $ = render([site], {})
+    const status = $('#site-search').parent().parent().find('[role="status"]')
+    expect(status).toHaveLength(1)
+    expect(status.text()).toBe('')
+  })
+
+  it('tras buscar anuncia "N sitios encontrados" con role="status"', () => {
+    const sites = [site, { ...site, id: 'site-2', url: 'https://otro.com' }, { ...site, id: 'site-3', url: 'https://otro.es' }]
+    const text = sitesFoundLabel(filterAndPaginateSites(sites, 'otro', 1))
+    const $ = parseHtml(renderToStaticMarkup(<SiteSearchStatus text={text} />))
+    expect($('[role="status"]').text()).toBe('2 sitios encontrados')
     expect($('[aria-live]')).toHaveLength(0)
   })
 })

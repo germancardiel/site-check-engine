@@ -41,7 +41,7 @@ const Y_TICKS = [0, 25, 50, 75, 100]
 type ScoredAudit = { date: string; score: number; seo: number; ai: number }
 
 const SERIES: Array<{ key: ChartSeriesKey; label: string }> = [
-  { key: 'score', label: 'Nota total' },
+  { key: 'score', label: 'Puntuación' },
   { key: 'seo', label: 'SEO' },
   { key: 'ai', label: 'IA' },
 ]
@@ -95,7 +95,7 @@ export function buildChartData(audits: HistoryAudit[], size: ChartSize = CHART_S
 
   const values = (key: ChartSeriesKey) => data.map((audit) => audit[key])
   const ariaLabel = [
-    describe('Nota total', values('score'), ` en ${data.length} auditorías`),
+    describe('Puntuación', values('score'), ` en ${data.length} auditorías`),
     describe('SEO', values('seo'), ''),
     describe('IA', values('ai'), ''),
   ].join('. ')

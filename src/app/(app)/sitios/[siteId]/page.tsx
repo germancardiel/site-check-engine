@@ -9,22 +9,24 @@ import { AuditSiteForm } from '@/components/sites/audit-site-form'
 import { BackLink } from '@/components/ui/back-link'
 import { buildHistory, HISTORY_LIMIT, type HistoryAudit } from '@/lib/audit/history'
 import { siteDisplayName } from '@/lib/format'
-import { SITE_NAME } from '@/lib/site'
+import { sitePageTitle } from '@/lib/page-titles'
+import { loadSiteName } from '@/lib/sites/title-data'
 import { auditCooldown } from '@/lib/sites/audit-availability'
 import { loadRemainingAudits } from '@/lib/sites/audit-usage'
 import { createClient } from '@/lib/supabase/server'
 import { siteIdSchema } from '@/lib/validation/site'
 
-export const metadata: Metadata = {
-  title: `Sitio · ${SITE_NAME}`,
+type SitePageProps = { params: Promise<{ siteId: string }> }
+
+export async function generateMetadata({ params }: SitePageProps): Promise<Metadata> {
+  const { siteId } = await params
+  return { title: sitePageTitle(await loadSiteName(siteId)) }
 }
 
 // `auditSite` can take up to ~10 s per page fetch plus auxiliary files.
 export const maxDuration = 60
 
 const HISTORY_COLUMNS = 'id, status, score, seo_score, ai_score, error, created_at'
-
-type SitePageProps = { params: Promise<{ siteId: string }> }
 
 async function loadSite(siteId: string, now: Date) {
   const parsed = siteIdSchema.safeParse({ id: siteId })
@@ -75,7 +77,7 @@ function NoAuditsYet({ auditForm }: { auditForm: ReactNode }) {
         Este sitio aún no tiene auditorías.
       </h2>
       <p className="max-w-prose text-ink-muted">
-        Lanza la primera: en unos segundos tendrás la nota de SEO, la de IA y la lista de lo que hay que arreglar.
+        Lanza la primera: en unos segundos tendrás la puntuación de SEO, la de IA y la lista de lo que hay que arreglar.
       </p>
       {auditForm}
     </section>

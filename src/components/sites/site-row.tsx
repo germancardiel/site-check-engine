@@ -41,7 +41,7 @@ type SiteRowProps = {
 const LINK_CLASS = 'rounded-sm underline decoration-line-strong transition-colors duration-200 ease-out hover:decoration-ink'
 
 function Scores({ audit }: { audit: LatestAudit | null }) {
-  if (!audit) return <p className="text-sm text-ink-muted">Sin auditar. Pulsa Auditar para obtener su primera nota.</p>
+  if (!audit) return <p className="text-sm text-ink-muted">Sin auditar. Pulsa Auditar para obtener su primera puntuación.</p>
   if (audit.status === 'error') {
     return (
       <div className="flex min-w-0 items-start gap-2 text-sm">
@@ -55,7 +55,7 @@ function Scores({ audit }: { audit: LatestAudit | null }) {
   }
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <ScoreMeter label="Nota" value={audit.score} tone="accent" />
+      <ScoreMeter label="Puntuación" value={audit.score} tone="accent" />
       <dl className="flex gap-4 font-mono text-xs text-ink-muted tabular-nums">
         <div className="flex gap-1.5">
           <dt>SEO</dt>
@@ -105,7 +105,7 @@ export function SiteRow({ site, now, remainingAudits, deleteAction }: SiteRowPro
         <p className="font-mono text-xs break-all text-ink-muted">{site.url}</p>
         <Link
           href={siteHref}
-          className="inline-flex items-center gap-1 self-start rounded-sm pt-0.5 text-xs font-medium text-ink underline decoration-line-strong transition-colors duration-200 ease-out hover:decoration-ink"
+          className="inline-flex min-h-10 items-center gap-1 self-start rounded-sm text-xs font-medium text-ink underline decoration-line-strong transition-colors duration-200 ease-out hover:decoration-ink"
         >
           <span>Historial y evolución</span>
           <ChevronIcon className="size-3 text-ink-muted" />

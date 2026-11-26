@@ -33,6 +33,24 @@ export function relativeLuminance({ r, g, b }: Rgb): number {
 }
 
 /**
+ * Contrast of `foreground` over `background` when the whole element is faded with CSS
+ * `opacity` (disabled buttons): both colours are painted, then mixed with `base` by `opacity`.
+ */
+export function contrastWithOpacity(foreground: Color, background: Color, base: Color, opacity: number): number {
+  if (opacity < 0 || opacity > 1) throw new Error(`Opacidad fuera de rango: ${opacity}`)
+  const ground = parseHex(base.hex)
+  const back = composite(background, ground)
+  const front = composite(foreground, back)
+  const fade = ({ r, g, b }: Rgb): Rgb => ({
+    r: r * opacity + ground.r * (1 - opacity),
+    g: g * opacity + ground.g * (1 - opacity),
+    b: b * opacity + ground.b * (1 - opacity),
+  })
+  const [light, dark] = [relativeLuminance(fade(front)), relativeLuminance(fade(back))].sort((a, b) => b - a)
+  return (light + 0.05) / (dark + 0.05)
+}
+
+/**
  * WCAG contrast ratio (1–21) of `foreground` over `background`. A translucent background is
  * first painted over `base` (the page ground); a translucent foreground over the result.
  */

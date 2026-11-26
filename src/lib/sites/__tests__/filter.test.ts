@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterAndPaginateSites, matchesSiteQuery, SITES_PAGE_SIZE } from '../filter'
+import { filterAndPaginateSites, matchesSiteQuery, SITES_PAGE_SIZE, sitesFoundLabel } from '../filter'
 
 const makeSites = (n: number) =>
   Array.from({ length: n }, (_, i) => ({
@@ -59,5 +59,14 @@ describe('matchesSiteQuery y filterAndPaginateSites (CA9)', () => {
       from: 0,
       to: 0,
     })
+  })
+})
+
+describe('sitesFoundLabel (T21 CA8)', () => {
+  it('anuncia el número de sitios encontrados y la página cuando hay varias', () => {
+    expect(sitesFoundLabel({ total: 3, page: 1, totalPages: 1 })).toBe('3 sitios encontrados')
+    expect(sitesFoundLabel({ total: 1, page: 1, totalPages: 1 })).toBe('1 sitio encontrado')
+    expect(sitesFoundLabel({ total: 0, page: 1, totalPages: 1 })).toBe('Ningún sitio encontrado')
+    expect(sitesFoundLabel(filterAndPaginateSites(makeSites(12), '', 2))).toBe('12 sitios encontrados · página 2 de 2')
   })
 })

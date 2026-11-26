@@ -53,3 +53,10 @@ export function filterAndPaginateSites<T extends FilterableSite>(
     to: startIndex + items.length,
   }
 }
+
+/** Text of the `role="status"` line of the site search: "3 sitios encontrados · página 1 de 2". */
+export function sitesFoundLabel(result: Pick<PaginatedSites<unknown>, 'total' | 'page' | 'totalPages'>): string {
+  const { total, page, totalPages } = result
+  const count = total === 0 ? 'Ningún sitio encontrado' : `${total} ${total === 1 ? 'sitio encontrado' : 'sitios encontrados'}`
+  return totalPages > 1 ? `${count} · página ${page} de ${totalPages}` : count
+}

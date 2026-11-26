@@ -29,7 +29,7 @@ export function CompareForm({ action, options, selectedId, pending }: CompareFor
         <select id="comparar" name="comparar" defaultValue={selectedId} className={`${INPUT_CLASS} max-w-full font-mono text-sm`}>
           {options.map((option) => (
             <option key={option.id} value={option.id}>
-              {formatAbsoluteDate(option.created_at)} · Nota {option.score ?? '–'}
+              {formatAbsoluteDate(option.created_at)} · Puntuación {option.score ?? '–'}
             </option>
           ))}
         </select>

@@ -1,6 +1,7 @@
 import type { CheckResult } from '@/lib/audit/types'
 import type { StoredReport } from '@/lib/ai/reports'
 import type { ActionPlan as ActionPlanData } from '@/lib/ai/schemas'
+import { REPORT_SECTION_IDS } from '@/components/audits/report-anchors'
 import { formatAbsoluteDate } from '@/lib/format'
 import { ActionPlan } from './action-plan'
 import { AiNotice } from './ai-notice'
@@ -24,7 +25,12 @@ type PlanSectionProps = {
 export function PlanSection(props: PlanSectionProps) {
   const { siteId, auditId, report, checks, siteUrl, score, remaining, loadError } = props
   return (
-    <section aria-labelledby="plan-title" className="flex flex-col gap-5 border-t border-line pt-10">
+    <section
+      id={REPORT_SECTION_IDS.plan}
+      tabIndex={-1}
+      aria-labelledby="plan-title"
+      className="flex scroll-mt-24 flex-col gap-5 border-t border-line pt-10"
+    >
       {/* tabIndex -1: the focus lands here after generating the plan (D-UX-10). */}
       <h2 id="plan-title" tabIndex={-1} className="text-2xl font-semibold">
         Plan de acción
@@ -35,7 +41,7 @@ export function PlanSection(props: PlanSectionProps) {
       ) : null}
       {report.status === 'none' && !loadError ? (
         <p className="max-w-prose text-ink-muted">
-          Aún no hay un plan de acción para esta auditoría. Genéralo con IA a partir de los checks pendientes.
+          Aún no hay un plan de acción para esta auditoría. Genéralo con IA a partir de las comprobaciones pendientes.
         </p>
       ) : null}
       {report.status === 'ok' ? (

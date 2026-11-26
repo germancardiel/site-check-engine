@@ -7,11 +7,11 @@ const STEPS = [
   },
   {
     title: 'Audítalo',
-    text: `${SITE_NAME} descarga la página como lo haría un rastreador, revisa robots.txt, llms.txt y el sitemap, y calcula una nota de SEO, otra de IA y la nota total.`,
+    text: `${SITE_NAME} descarga la página como lo haría un rastreador, revisa robots.txt, llms.txt y el sitemap, y calcula una puntuación de SEO, otra de IA y la puntuación total.`,
   },
   {
     title: 'Mejora con un plan de IA',
-    text: 'Genera un plan de acción priorizado por impacto y esfuerzo, vuelve a auditar tras cada cambio y sigue la evolución de la nota en el historial.',
+    text: 'Genera un plan de acción priorizado por impacto y esfuerzo, vuelve a auditar tras cada cambio y sigue la evolución de la puntuación en el historial.',
   },
 ] as const
 

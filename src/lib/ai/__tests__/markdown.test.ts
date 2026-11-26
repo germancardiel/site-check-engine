@@ -32,7 +32,7 @@ describe('planToMarkdown (CA1)', () => {
   it('incluye título con la URL, fecha de generación recibida por parámetro, nota y resumen', () => {
     expect(md.startsWith('# Plan de acción — https://www.ejemplo.com/\n')).toBe(true)
     expect(md).toContain('Generado el 25 nov 2026, 11:30')
-    expect(md).toContain('Nota de la auditoría: 62/100')
+    expect(md).toContain('Puntuación de la auditoría: 62/100')
     expect(md).toContain('## Resumen\n\nLa web necesita mejorar el título y la descripción.\n')
   })
 
@@ -54,16 +54,16 @@ describe('planToMarkdown (CA1)', () => {
 
   it('lista los checkIds sin repetir, con el título legible si el check existe', () => {
     const first = md.slice(md.indexOf('### 01.'), md.indexOf('### 02.'))
-    expect(first).toContain('**Checks relacionados:**\n\n- Title con longitud adecuada (`onpage.title`)\n- `desconocido`')
+    expect(first).toContain('**Comprobaciones relacionadas:**\n\n- Title con longitud adecuada (`onpage.title`)\n- `desconocido`')
     expect(first.match(/onpage\.title/g)).toHaveLength(1)
     const second = md.slice(md.indexOf('### 02.'), md.indexOf('### 03.'))
-    expect(second).not.toContain('Checks relacionados')
+    expect(second).not.toContain('Comprobaciones relacionadas')
     expect(md).toContain('- Archivo llms.txt (`ai.llms`)')
   })
 
-  it('indica "sin nota" cuando la auditoría no tiene nota y no depende de la hora actual', () => {
+  it('indica "sin datos" cuando la auditoría no tiene puntuación y no depende de la hora actual', () => {
     const a = planToMarkdown(plan, { ...meta, score: null })
-    expect(a).toContain('Nota de la auditoría: sin nota')
+    expect(a).toContain('Puntuación de la auditoría: sin datos')
     expect(planToMarkdown(plan, meta)).toBe(md)
   })
 })

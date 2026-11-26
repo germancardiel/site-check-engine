@@ -72,7 +72,7 @@ export function ThemeToggle() {
       type="button"
       onClick={handleToggle}
       aria-label={themeToggleAriaLabel(theme)}
-      className={buttonClass('secondary', 'min-h-8 gap-1.5 px-2.5 py-1 text-xs')}
+      className={buttonClass('secondary', 'gap-1.5 px-2.5 py-1 text-xs')}
     >
       <ThemeIcon theme={theme} />
       <span>{themeToggleText(theme)}</span>

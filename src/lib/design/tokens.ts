@@ -109,5 +109,18 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
   { foreground: 'on-accent', background: 'accent-hover', min: TEXT, use: 'botón primario en hover' },
   { foreground: 'ink', background: 'panel', min: TEXT, use: 'hover de botones secundarios, peligro, desplegables e inputs' },
   { foreground: 'ink', background: 'ground', min: GRAPHIC, use: 'borde en hover de inputs y botones secundarios' },
-  { foreground: 'ink-muted', background: 'ground', min: TEXT, use: 'texto de botones secundarios deshabilitados (sin opacidad)' },
 ]
+
+/** Opacity of disabled buttons (`disabled:opacity-80` in `button-styles.ts`). */
+export const DISABLED_OPACITY = 0.8
+
+export type DisabledPair = { foreground: TokenName; background: TokenName | null; base: TokenName; use: string }
+
+/**
+ * Disabled buttons with text, faded by `DISABLED_OPACITY` over the surfaces they sit on
+ * (`background: null` = transparent button). Each one needs 4.5:1 (D-UX-04).
+ */
+export const DISABLED_PAIRS: DisabledPair[] = (['ground', 'panel'] as const).flatMap((base) => [
+  { foreground: 'on-accent', background: 'accent', base, use: 'botón primario deshabilitado' },
+  { foreground: 'ink', background: null, base, use: 'botón secundario o de peligro deshabilitado' },
+])

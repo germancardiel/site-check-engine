@@ -8,7 +8,7 @@ import { downloadTextFile } from '@/lib/download'
 
 type DownloadPlanButtonProps = PlanMarkdownMeta & { plan: ActionPlan }
 
-/** "Descargar .md" for the stored action plan; the file is built and downloaded in the browser. */
+/** "Descargar plan (Markdown)" for the stored action plan; the file is built and downloaded in the browser. */
 export function DownloadPlanButton({ plan, ...meta }: DownloadPlanButtonProps) {
   return (
     <button
@@ -17,7 +17,7 @@ export function DownloadPlanButton({ plan, ...meta }: DownloadPlanButtonProps) {
       className={buttonClass('secondary')}
     >
       <DownloadIcon />
-      Descargar .md
+      Descargar plan (Markdown)
     </button>
   )
 }

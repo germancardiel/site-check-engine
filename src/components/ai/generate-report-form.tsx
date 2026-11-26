@@ -28,7 +28,7 @@ export const LABELS = {
     started: 'Generando el plan de acción con IA.',
     regenerateHint: 'Regenerar sustituye el plan actual y usa 1 generación.',
     heading: '#plan-title',
-    steps: ['Checks de la auditoría enviados al modelo', 'Priorizando por impacto y esfuerzo'],
+    steps: ['Comprobaciones de la auditoría enviadas al modelo', 'Priorizando por impacto y esfuerzo'],
   },
   changes: {
     create: 'Generar resumen con IA',

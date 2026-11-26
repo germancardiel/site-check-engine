@@ -35,15 +35,15 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('PlanSection: botón "Descargar .md" (CA3)', () => {
+describe('PlanSection: botón "Descargar plan (Markdown)" (CA3)', () => {
   it('aparece con un plan válido, como botón secundario con icono oculto a lectores de pantalla', () => {
     const html = renderSection(okReport)
-    expect(html).toContain('Descargar .md')
+    expect(html).toContain('Descargar plan (Markdown)')
     expect(html).toMatch(/<button type="button" class="[^"]*border-line-strong[^"]*"><svg aria-hidden="true"/)
   })
 
   it.each([{ status: 'none' }, { status: 'invalid' }] as const)('no aparece con status $status', (report) => {
-    expect(renderSection(report)).not.toContain('Descargar .md')
+    expect(renderSection(report)).not.toContain('Descargar plan (Markdown)')
   })
 })
 

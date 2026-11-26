@@ -84,12 +84,12 @@ export function SampleReport() {
         className="specimen-resolved grid grid-cols-2 gap-5 border-b border-line px-4 py-4 sm:px-5"
         style={step(previewRows.length)}
       >
-        <ScoreMeter label="Nota SEO" value={specimen.seoScore} size="lg" />
-        <ScoreMeter label="Nota IA" value={specimen.aiScore} size="lg" />
+        <ScoreMeter label="Puntuación SEO" value={specimen.seoScore} size="lg" />
+        <ScoreMeter label="Puntuación IA" value={specimen.aiScore} size="lg" />
       </div>
       <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
         <p className="font-mono text-xs tracking-wider text-ink-muted uppercase">
-          Muestra de {previewRows.length} de {specimen.rows.length} checks
+          Muestra de {previewRows.length} de {specimen.rows.length} comprobaciones
         </p>
         <ol>
           {previewRows.map((row, index) => (

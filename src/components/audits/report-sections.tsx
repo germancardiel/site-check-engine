@@ -3,13 +3,15 @@
 import { useEffect } from 'react'
 import { bindAnchorReveal } from '@/lib/anchor'
 import { CATEGORY_BY_ID } from '@/lib/audit/categories'
+import { issuesCountLabel, NO_SCORE_LABEL } from '@/lib/audit/present'
 import type { AuditIssue, CategoryId, CheckResult } from '@/lib/audit/types'
 import { cn } from '@/lib/utils'
 import { ArrowRightIcon, CategoryIcon } from './category-icons'
 import { CheckStatusBadge, scoreColor } from './check-status-badge'
+import { REPORT_SECTION_IDS } from './report-anchors'
 
 export function useReportAnchorSync(
-  anchorToCategory: Map<string, CategoryId>,
+  anchorToCategory: Map<string, CategoryId | null>,
   onRevealCategory: (cat: CategoryId) => void,
 ) {
   useEffect(
@@ -43,15 +45,22 @@ export function CategoryGrid({
               <CategoryIcon category={c.id} className="size-4 text-ink-muted" />
               {c.issues > 0 ? (
                 <span className="rounded-full border border-warn px-2 py-0.5 font-mono text-[11px] font-medium text-ink tabular-nums">
-                  {c.issues}
+                  <span aria-hidden="true">{c.issues}</span>
+                  <span className="sr-only">{issuesCountLabel(c.issues)}</span>
                 </span>
               ) : null}
             </span>
             <span className="text-xs leading-tight text-ink-muted">
               {CATEGORY_BY_ID[c.id].number}. {c.shortTitle}
             </span>
-            <span className={cn('font-display text-2xl font-semibold tracking-display tabular-nums', scoreColor(c.score))}>
-              {c.score ?? 'N/A'}
+            <span
+              className={cn(
+                'font-display font-semibold tracking-display tabular-nums',
+                c.score === null ? 'text-base' : 'text-2xl',
+                scoreColor(c.score),
+              )}
+            >
+              {c.score ?? NO_SCORE_LABEL}
             </span>
           </button>
         </li>
@@ -71,7 +80,12 @@ export function IssuesSection({
 }) {
   if (issues.length === 0) return null
   return (
-    <section aria-labelledby="issues-title" className="rounded-md border border-line bg-panel p-5 md:p-6">
+    <section
+      id={REPORT_SECTION_IDS.issues}
+      tabIndex={-1}
+      aria-labelledby="issues-title"
+      className="scroll-mt-24 rounded-md border border-line bg-panel p-5 md:p-6"
+    >
       <h2 id="issues-title" className="font-display text-xl font-semibold tracking-display text-ink">
         Aspectos a mejorar <span className="font-serif font-normal text-ink-muted">({issues.length})</span>
       </h2>

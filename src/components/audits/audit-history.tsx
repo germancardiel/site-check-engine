@@ -12,7 +12,7 @@ function EntryScores({ entry }: { entry: HistoryEntry }) {
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
       <dl className="flex gap-4 font-mono text-sm tabular-nums">
         <div className="flex gap-1.5">
-          <dt className="text-ink-muted">Nota</dt>
+          <dt className="text-ink-muted">Puntuación</dt>
           <dd className="font-medium text-accent-text">{entry.score ?? '–'}</dd>
         </div>
         <div className="flex gap-1.5">

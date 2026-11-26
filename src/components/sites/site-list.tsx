@@ -9,7 +9,7 @@ import { INPUT_CLASS } from '@/components/ui/text-field'
 import { useFocusActionResult } from '@/components/ui/use-focus-action-result'
 import { NETWORK_ERROR, withNetworkFallback } from '@/lib/action-safety'
 import { auditQuotaLabel } from '@/lib/sites/audit-availability'
-import { filterAndPaginateSites, SITES_PAGE_SIZE } from '@/lib/sites/filter'
+import { filterAndPaginateSites, SITES_PAGE_SIZE, sitesFoundLabel } from '@/lib/sites/filter'
 import type { SiteActionState } from '@/lib/validation/site'
 import { SiteRow, type SiteWithLatestAudit } from './site-row'
 
@@ -28,7 +28,7 @@ function EmptySitesState() {
       <p className="text-lg font-semibold text-ink">Aún no has añadido ningún sitio.</p>
       <p className="max-w-prose text-ink-muted">
         Escribe la dirección de tu web en el formulario de arriba y pulsa Añadir. Después, audítala para obtener su
-        primera nota de SEO y de IA.
+        primera puntuación de SEO y de IA.
       </p>
       <a href="#site-url" className={buttonClass('secondary', 'mt-2')}>
         Añadir el primer sitio
@@ -117,6 +117,38 @@ function SiteSearchField({ value, onChange }: { value: string; onChange: (value:
   )
 }
 
+/** `role="status"` line that announces "N sitios encontrados" after a search or page change. */
+export function SiteSearchStatus({ text }: { text: string }) {
+  return (
+    <p role="status" className="text-sm text-ink-muted">
+      {text}
+    </p>
+  )
+}
+
+/**
+ * Search and pagination state. The announcement is set only by the user's own search or page
+ * change, and cleared when the list itself changes (e.g. after a delete, which is announced on
+ * its own), so each result is announced once (D-UX-10).
+ */
+function useSiteBrowsing(sites: SiteWithLatestAudit[]) {
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [announcement, setAnnouncement] = useState('')
+  const [announcedSites, setAnnouncedSites] = useState(sites)
+  if (announcedSites !== sites) {
+    setAnnouncedSites(sites)
+    setAnnouncement('')
+  }
+
+  const browse = (nextQuery: string, nextPage: number) => {
+    setQuery(nextQuery)
+    setPage(nextPage)
+    setAnnouncement(sitesFoundLabel(filterAndPaginateSites(sites, nextQuery, nextPage, SITES_PAGE_SIZE)))
+  }
+  return { query, paged: filterAndPaginateSites(sites, query, page, SITES_PAGE_SIZE), announcement, browse }
+}
+
 type SiteTableProps = Pick<SiteListViewProps, 'sites' | 'now' | 'remainingAudits' | 'deleteAction'>
 
 function SiteTable({ sites, now, remainingAudits, deleteAction }: SiteTableProps) {
@@ -127,7 +159,7 @@ function SiteTable({ sites, now, remainingAudits, deleteAction }: SiteTableProps
         className={`hidden border-b border-line-strong pb-2 font-mono text-xs tracking-wider text-ink-muted uppercase lg:grid ${COLUMNS}`}
       >
         <span>Sitio</span>
-        <span>Última nota</span>
+        <span>Última puntuación</span>
         <span>Auditado</span>
         <span>Acciones</span>
       </div>
@@ -154,8 +186,7 @@ type SiteListViewProps = {
  * ("Sitio borrado." with `role="status"`), because the deleted row disappears (D-UX-10).
  */
 export function SiteListView({ sites, now, remainingAudits, deleteState, deleteAction, feedbackRef }: SiteListViewProps) {
-  const [query, setQuery] = useState('')
-  const [page, setPage] = useState(1)
+  const { query, paged, announcement, browse } = useSiteBrowsing(sites)
 
   const feedback = (
     <div ref={feedbackRef}>
@@ -171,17 +202,16 @@ export function SiteListView({ sites, now, remainingAudits, deleteState, deleteA
     )
   }
 
-  const paged = filterAndPaginateSites(sites, query, page, SITES_PAGE_SIZE)
-  const updateQuery = (next: string) => {
-    setQuery(next)
-    setPage(1)
-  }
+  const updateQuery = (next: string) => browse(next, 1)
 
   return (
     <div className="flex flex-col gap-5">
       {feedback}
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <SiteSearchField value={query} onChange={updateQuery} />
+        <div className="flex flex-col gap-1.5">
+          <SiteSearchField value={query} onChange={updateQuery} />
+          <SiteSearchStatus text={announcement} />
+        </div>
         {remainingAudits !== null ? <p className="text-sm text-ink-muted">{auditQuotaLabel(remainingAudits)}</p> : null}
       </div>
       {paged.total === 0 ? (
@@ -195,8 +225,8 @@ export function SiteListView({ sites, now, remainingAudits, deleteState, deleteA
             from={paged.from}
             to={paged.to}
             total={paged.total}
-            onPrev={() => setPage(Math.max(1, paged.page - 1))}
-            onNext={() => setPage(Math.min(paged.totalPages, paged.page + 1))}
+            onPrev={() => browse(query, Math.max(1, paged.page - 1))}
+            onNext={() => browse(query, Math.min(paged.totalPages, paged.page + 1))}
           />
         </div>
       )}

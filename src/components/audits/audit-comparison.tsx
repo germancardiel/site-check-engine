@@ -72,7 +72,7 @@ export function AuditComparison({ since, diff }: AuditComparisonProps) {
         </time>
       </h3>
       <dl className="flex flex-wrap gap-x-6 gap-y-2">
-        <DeltaItem label="Nota" delta={diff.scoreDelta} />
+        <DeltaItem label="Puntuación" delta={diff.scoreDelta} />
         <DeltaItem label="SEO" delta={diff.seoDelta} />
         <DeltaItem label="IA" delta={diff.aiDelta} />
       </dl>
@@ -84,7 +84,7 @@ export function AuditComparison({ since, diff }: AuditComparisonProps) {
           <ChangeList title="Eliminados" changes={diff.removed} />
         </div>
       ) : (
-        <p className="text-ink-muted">Sin cambios en los checks.</p>
+        <p className="text-ink-muted">Sin cambios en las comprobaciones.</p>
       )}
     </div>
   )

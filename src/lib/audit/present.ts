@@ -10,13 +10,25 @@ import type { AuditReport, CategoryId, CheckResult, CheckStatus, ScoreLabel } fr
 export const STATUS_LABEL: Record<CheckStatus, string> = {
   pass: 'Correcto',
   warn: 'Mejorable',
-  fail: 'Error',
+  fail: 'Falla',
   na: 'No aplica',
   error: 'No evaluable',
 }
 
 /** Text shown next to each status icon, so the status never depends on color alone. */
 export const CHECK_STATUS_LABEL: Record<CheckStatus, string> = STATUS_LABEL
+
+/** Shown instead of a score when a category has nothing to evaluate. */
+export const NO_SCORE_LABEL = 'Sin datos'
+
+/** Brief help for the "IA" score, shown next to it. */
+export const AI_SCORE_HELP = 'IA: visibilidad para asistentes de IA como ChatGPT, Claude o Perplexity.'
+
+/** Accessible text of an issue counter: "1 aspecto a mejorar", "3 aspectos a mejorar"… */
+export function issuesCountLabel(count: number): string {
+  if (count <= 0) return 'Sin aspectos a mejorar'
+  return `${count} ${count === 1 ? 'aspecto' : 'aspectos'} a mejorar`
+}
 
 export const CHECK_CATEGORY_LABEL: Record<CategoryId, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.id, c.shortTitle]),
@@ -138,13 +150,13 @@ export function reportToMarkdown(report: AuditReport): string {
     'Generado con Site Check Engine',
     '',
   ]
-  if (report.capReason) lines.push(`> ⚠️ Nota limitada a 40: ${report.capReason}.`, '')
+  if (report.capReason) lines.push(`> ⚠️ Puntuación limitada a 40: ${report.capReason}.`, '')
   for (const n of report.notices) lines.push(`> ${n}`, '')
 
-  lines.push('## Resumen por apartado', '', '| Apartado | Nota | Aspectos a mejorar |', '|---|---|---|')
+  lines.push('## Resumen por apartado', '', '| Apartado | Puntuación | Aspectos a mejorar |', '|---|---|---|')
   for (const c of report.categories) {
     const num = CATEGORY_BY_ID[c.id].number
-    lines.push(`| ${num}. ${c.title} | ${c.score ?? 'N/A'} | ${c.issues} |`)
+    lines.push(`| ${num}. ${c.title} | ${c.score ?? NO_SCORE_LABEL} | ${c.issues} |`)
   }
   lines.push('')
 
@@ -158,7 +170,7 @@ export function reportToMarkdown(report: AuditReport): string {
 
   for (const c of report.categories) {
     const num = CATEGORY_BY_ID[c.id].number
-    lines.push(`## ${num}. ${c.title} (${c.score ?? 'N/A'}/100)`, '')
+    lines.push(`## ${num}. ${c.title} (${c.score ?? NO_SCORE_LABEL}/100)`, '')
     for (const ch of c.checks) {
       lines.push(`### ${ch.title}: ${STATUS_LABEL[ch.status]}`, '', ch.message)
       if (ch.evidence) lines.push('', `\`${ch.evidence}\``)

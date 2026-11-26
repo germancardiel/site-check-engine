@@ -2,7 +2,8 @@
 
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { buttonClass } from '@/components/ui/button-styles'
-import { checkAnchorId, reportToMarkdown } from '@/lib/audit/present'
+import { jumpToAnchor } from '@/lib/anchor'
+import { AI_SCORE_HELP, checkAnchorId, reportToMarkdown } from '@/lib/audit/present'
 import { downloadTextFile } from '@/lib/download'
 import type { AuditReport, CategoryId, CategoryResult } from '@/lib/audit/types'
 import { formatAbsoluteDate, formatRelativeTime } from '@/lib/format'
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { CategoryAccordion } from './category-accordion'
 import { DownloadIcon } from './category-icons'
 import { scoreColor } from './check-status-badge'
+import { REPORT_SECTION_IDS } from './report-anchors'
 import { CategoryGrid, IssuesSection, useReportAnchorSync } from './report-sections'
 import { ScoreGauge } from './score-gauge'
 
@@ -30,6 +32,10 @@ function downloadMarkdown(report: AuditReport) {
   }
   downloadTextFile(reportToMarkdown(report), `auditoria-seo-${host}.md`)
 }
+
+/** Text buttons ("Expandir todo"…) with a 40 px touch target. */
+const TEXT_BUTTON_CLASS =
+  'inline-flex min-h-10 items-center rounded-sm text-ink-muted underline decoration-line-strong hover:text-ink hover:decoration-ink'
 
 function ReportAlerts({
   report,
@@ -52,7 +58,7 @@ function ReportAlerts({
       ) : null}
       {report.capReason ? (
         <p className="rounded-md border border-fail bg-ground px-3 py-2 text-sm text-ink">
-          Nota limitada a 40: {report.capReason}. Hasta resolverlo, Google no mostrará esta página.
+          Puntuación limitada a 40: {report.capReason}. Hasta resolverlo, Google no mostrará esta página.
         </p>
       ) : null}
       {report.notices.map((n) => (
@@ -82,8 +88,10 @@ function ReportHeader({
 
   return (
     <section
+      id={REPORT_SECTION_IDS.summary}
+      tabIndex={-1}
       aria-labelledby="report-summary-title"
-      className="flex flex-col gap-6 rounded-md border border-line bg-panel p-5 md:flex-row md:items-center md:p-7"
+      className="flex scroll-mt-24 flex-col gap-6 rounded-md border border-line bg-panel p-5 md:flex-row md:items-center md:p-7"
     >
       <h2 id="report-summary-title" className="sr-only">
         Resumen de la auditoría
@@ -106,11 +114,12 @@ function ReportHeader({
             SEO {report.seoScore}/100 · IA {report.aiScore}/100
           </span>
         </p>
+        <p className="text-xs text-ink-muted">{AI_SCORE_HELP}</p>
         <ReportAlerts report={report} previous={previous} />
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button type="button" onClick={() => downloadMarkdown(report)} className={cn(buttonClass('secondary'), 'gap-2')}>
             <DownloadIcon />
-            Descargar .md
+            Descargar informe (Markdown)
           </button>
           {reAuditAction}
         </div>
@@ -133,24 +142,16 @@ function CategoryDetailsSection({
   onCollapseAll: () => void
 }) {
   return (
-    <section aria-labelledby="detail-title" className="space-y-3">
+    <section id={REPORT_SECTION_IDS.details} tabIndex={-1} aria-labelledby="detail-title" className="scroll-mt-24 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="detail-title" className="font-display text-xl font-semibold tracking-display text-ink">
           Detalle por apartado
         </h2>
         <div className="flex gap-4 text-sm">
-          <button
-            type="button"
-            className="rounded-sm text-ink-muted underline decoration-line-strong hover:text-ink hover:decoration-ink"
-            onClick={onExpandAll}
-          >
+          <button type="button" className={TEXT_BUTTON_CLASS} onClick={onExpandAll}>
             Expandir todo
           </button>
-          <button
-            type="button"
-            className="rounded-sm text-ink-muted underline decoration-line-strong hover:text-ink hover:decoration-ink"
-            onClick={onCollapseAll}
-          >
+          <button type="button" className={TEXT_BUTTON_CLASS} onClick={onCollapseAll}>
             Colapsar todo
           </button>
         </div>
@@ -162,8 +163,9 @@ function CategoryDetailsSection({
   )
 }
 
-function buildAnchorCategoryMap(categories: CategoryResult[]): Map<string, CategoryId> {
-  const map = new Map<string, CategoryId>()
+/** Anchors of the report: categories and checks open their category; the sections open nothing (`null`). */
+function buildAnchorCategoryMap(categories: CategoryResult[]): Map<string, CategoryId | null> {
+  const map = new Map<string, CategoryId | null>(Object.values(REPORT_SECTION_IDS).map((id) => [id, null]))
   for (const cat of categories) {
     map.set(`cat-${cat.id}`, cat.id)
     for (const ch of cat.checks) map.set(checkAnchorId(ch.id), cat.id)
@@ -192,7 +194,8 @@ export function ReportView({ report, previous, relativeTime, now, reAuditAction 
 
   const openAndScroll = (categoryId: CategoryId, targetElementId = `cat-${categoryId}`) => {
     setOpen((s) => new Set(s).add(categoryId))
-    requestAnimationFrame(() => document.getElementById(targetElementId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    // The focus follows the jump; instant scroll with prefers-reduced-motion (`jumpToAnchor`).
+    requestAnimationFrame(() => jumpToAnchor(window, targetElementId))
   }
 
   const rel = relativeTime ?? (now ? formatRelativeTime(report.auditedAt, now) : '')

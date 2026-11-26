@@ -32,3 +32,14 @@ describe('ThemeToggle en PublicHeader y AppHeader (CA10)', () => {
     expect(parseHtml(appHtml)('button[aria-label="Cambiar a tema claro"]')).toHaveLength(1)
   })
 })
+
+describe('objetivos táctiles de la cabecera (T21 CA10)', () => {
+  it('el cambio de tema y "Cerrar sesión" miden al menos 40 px (min-h-10)', () => {
+    const $ = parseHtml(renderToStaticMarkup(<AppHeader />))
+    const classes = (selector: string) => ($(selector).attr('class') ?? '').split(' ')
+    expect(classes('button[aria-label="Cambiar a tema claro"]')).toContain('min-h-10')
+    expect(classes('button[type="submit"]')).toContain('min-h-10')
+    expect($('button[type="submit"]').text()).toBe('Cerrar sesión')
+    expect($.html()).not.toContain('min-h-8')
+  })
+})

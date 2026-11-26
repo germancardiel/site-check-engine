@@ -68,9 +68,9 @@ describe('ReportView, CategoryAccordion y CheckRow (CA5)', () => {
     expect(html).toContain('https://ejemplo.com/')
     expect(html).toContain('2 aspectos a mejorar detectados')
     expect(html).toContain('↑ +5')
-    expect(html).toContain('Nota limitada a 40: La página tiene la directiva noindex')
+    expect(html).toContain('Puntuación limitada a 40: La página tiene la directiva noindex')
     expect(html).toContain('Rendimiento parcial: PageSpeed no disponible.')
-    expect(html).toContain('Descargar .md')
+    expect(html).toContain('Descargar informe (Markdown)')
     expect(html).toContain('Volver a auditar')
   })
 

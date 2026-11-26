@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
-import { anchorIdFromHash, bindAnchorReveal, type AnchorEnv } from '@/lib/anchor'
+import {
+  anchorIdFromHash,
+  bindAnchorReveal,
+  jumpToAnchor,
+  REDUCED_MOTION_QUERY,
+  scrollBehaviorFor,
+  type AnchorEnv,
+  type JumpEnv,
+} from '@/lib/anchor'
 
 describe('anchorIdFromHash', () => {
   it('quita la almohadilla y decodifica el id', () => {
@@ -18,11 +26,31 @@ describe('anchorIdFromHash', () => {
   })
 })
 
+/** Fake document whose elements record scrolls and move `activeElement` when focused. */
+function fakeDocument(missing: string[] = ['missing']) {
+  const scrolled: string[] = []
+  const behaviors: ScrollBehavior[] = []
+  const state = { activeElement: null as string | null }
+  const getElementById = (id: string) =>
+    missing.includes(id)
+      ? null
+      : {
+          scrollIntoView: (options: ScrollIntoViewOptions) => {
+            scrolled.push(id)
+            if (options.behavior) behaviors.push(options.behavior)
+          },
+          focus: () => {
+            state.activeElement = id
+          },
+        }
+  return { getElementById, scrolled, behaviors, state }
+}
+
 /** Fake window/document (EventTarget, no DOM library): records scrolls and runs rAF at once. */
 function fakeEnv(initialHash = '') {
   const win = new EventTarget()
   const doc = new EventTarget()
-  const scrolled: string[] = []
+  const { getElementById, scrolled, state } = fakeDocument()
   const env = {
     location: { hash: initialHash },
     addEventListener: (type: string, fn: () => void) => win.addEventListener(type, fn),
@@ -32,8 +60,7 @@ function fakeEnv(initialHash = '') {
         doc.addEventListener(type, fn as unknown as EventListener),
       removeEventListener: (type: string, fn: (e: { target: unknown }) => void) =>
         doc.removeEventListener(type, fn as unknown as EventListener),
-      getElementById: (id: string) =>
-        id === 'missing' ? null : { scrollIntoView: () => void scrolled.push(id) },
+      getElementById,
     },
     requestAnimationFrame: (cb: () => void) => cb(),
   } satisfies AnchorEnv
@@ -46,7 +73,7 @@ function fakeEnv(initialHash = '') {
     Object.defineProperty(event, 'target', { value: target })
     doc.dispatchEvent(event)
   }
-  return { env, scrolled, navigate, click }
+  return { env, scrolled, state, navigate, click }
 }
 
 const SECTIONS = new Map([
@@ -90,5 +117,59 @@ describe('bindAnchorReveal (CA5: abrir el apartado al navegar a #check-<id>)', (
     navigate('#check-ai.llms')
     click({ closest: () => ({ hash: '#cat-onpage' }) })
     expect(reveal).not.toHaveBeenCalled()
+  })
+})
+
+describe('jumpToAnchor (T21 CA1: el foco sigue al salto)', () => {
+  function env(reduced: boolean | null) {
+    const doc = fakeDocument()
+    const queries: string[] = []
+    const jumpEnv: JumpEnv = {
+      document: { getElementById: doc.getElementById },
+      ...(reduced === null
+        ? {}
+        : {
+            matchMedia: (query: string) => {
+              queries.push(query)
+              return { matches: reduced }
+            },
+          }),
+    }
+    return { jumpEnv, doc, queries }
+  }
+
+  it('desplaza y deja document.activeElement en el destino', () => {
+    const { jumpEnv, doc } = env(false)
+    expect(jumpToAnchor(jumpEnv, 'cat-crawl')).toBe(true)
+    expect(doc.scrolled).toEqual(['cat-crawl'])
+    expect(doc.state.activeElement).toBe('cat-crawl')
+    expect(doc.behaviors).toEqual(['smooth'])
+  })
+
+  it("con prefers-reduced-motion: reduce usa behavior: 'auto'", () => {
+    const { jumpEnv, doc, queries } = env(true)
+    jumpToAnchor(jumpEnv, 'check-crawl-noindex')
+    expect(queries).toEqual([REDUCED_MOTION_QUERY])
+    expect(doc.behaviors).toEqual(['auto'])
+    expect(doc.state.activeElement).toBe('check-crawl-noindex')
+  })
+
+  it("sin matchMedia usa 'smooth'; un destino inexistente no hace nada", () => {
+    const { jumpEnv, doc } = env(null)
+    expect(scrollBehaviorFor(jumpEnv)).toBe('smooth')
+    expect(jumpToAnchor(jumpEnv, 'missing')).toBe(false)
+    expect(doc.state.activeElement).toBeNull()
+  })
+
+  it('bindAnchorReveal enfoca el destino y acepta anclas conocidas sin apartado que abrir (null)', () => {
+    const { env: anchorEnv, state, navigate } = fakeEnv()
+    const reveal = vi.fn()
+    const sections = new Map<string, string | null>([...SECTIONS, ['plan-de-accion', null]])
+    bindAnchorReveal(anchorEnv, (id) => sections.get(id), reveal)
+    navigate('#check-ai.llms')
+    expect(state.activeElement).toBe('check-ai.llms')
+    navigate('#plan-de-accion')
+    expect(state.activeElement).toBe('plan-de-accion')
+    expect(reveal.mock.calls.map(([section]) => section)).toEqual(['ai'])
   })
 })

@@ -9,15 +9,45 @@ export function anchorIdFromHash(hash: string): string | null {
   }
 }
 
+/** Element a jump lands on: it must be focusable (`tabIndex={-1}`) so the focus can follow. */
+export type JumpTarget = {
+  scrollIntoView(options: ScrollIntoViewOptions): void
+  focus(options?: FocusOptions): void
+}
+
+/** Minimal browser surface used by `jumpToAnchor` (the real `window` satisfies it). */
+export type JumpEnv = {
+  document: { getElementById(id: string): JumpTarget | null }
+  matchMedia?: (query: string) => { matches: boolean }
+}
+
+export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
+
+/** `'auto'` (instant) when the user asks for reduced motion, `'smooth'` otherwise. */
+export function scrollBehaviorFor(env: Pick<JumpEnv, 'matchMedia'>): ScrollBehavior {
+  return typeof env.matchMedia === 'function' && env.matchMedia(REDUCED_MOTION_QUERY).matches ? 'auto' : 'smooth'
+}
+
+/**
+ * Scrolls to the element with `id` and moves the focus to it, so keyboard and screen reader
+ * users continue from the destination. Returns whether the element exists.
+ */
+export function jumpToAnchor(env: JumpEnv, id: string): boolean {
+  const target = env.document.getElementById(id)
+  if (!target) return false
+  target.scrollIntoView({ behavior: scrollBehaviorFor(env), block: 'start' })
+  target.focus({ preventScroll: true })
+  return true
+}
+
 /** Minimal browser surface used by `bindAnchorReveal` (the real `window`/`document` satisfy it). */
-export type AnchorEnv = {
+export type AnchorEnv = JumpEnv & {
   location: { hash: string }
   addEventListener(type: 'hashchange', listener: () => void): void
   removeEventListener(type: 'hashchange', listener: () => void): void
-  document: {
+  document: JumpEnv['document'] & {
     addEventListener(type: 'click', listener: (event: { target: unknown }) => void): void
     removeEventListener(type: 'click', listener: (event: { target: unknown }) => void): void
-    getElementById(id: string): { scrollIntoView(options: ScrollIntoViewOptions): void } | null
   }
   requestAnimationFrame(callback: () => void): unknown
 }
@@ -31,21 +61,23 @@ function hashOfClickedLink(target: unknown): string | null {
 }
 
 /**
- * Opens the section that owns the anchor in the URL hash (`#check-<id>` or `#cat-<id>`) and
- * scrolls to it: on load, on `hashchange` and on clicks on in-page links. Returns the cleanup.
+ * Handles the anchors of a page (on load, on `hashchange` and on clicks on in-page links):
+ * `sectionOf` returns the collapsible section that owns the anchor (opened with `reveal`), `null`
+ * for a known anchor with nothing to open, or `undefined` to ignore it. Known anchors are then
+ * scrolled to and focused (`jumpToAnchor`). Returns the cleanup.
  */
 export function bindAnchorReveal(
   env: AnchorEnv,
-  sectionOf: (anchorId: string) => string | undefined,
+  sectionOf: (anchorId: string) => string | null | undefined,
   reveal: (section: string) => void,
 ): () => void {
   function revealHash(hash: string) {
     const id = anchorIdFromHash(hash)
     const section = id ? sectionOf(id) : undefined
-    if (!id || !section) return
-    reveal(section)
+    if (!id || section === undefined) return
+    if (section !== null) reveal(section)
     env.requestAnimationFrame(() => {
-      env.document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      jumpToAnchor(env, id)
     })
   }
 

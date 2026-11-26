@@ -7,6 +7,7 @@ import { PlanSection } from '@/components/ai/plan-section'
 import type { CompareOption } from '@/components/audits/compare-form'
 import { ComparisonSection, type Comparison } from '@/components/audits/comparison-section'
 import { DetailSkeleton } from '@/components/audits/detail-skeleton'
+import { ReportIndex } from '@/components/audits/report-index'
 import { ReportView } from '@/components/audits/report-view'
 import { AuditSiteForm } from '@/components/sites/audit-site-form'
 import { BackLink } from '@/components/ui/back-link'
@@ -16,16 +17,13 @@ import { diffAudits } from '@/lib/audit/diff'
 import { buildAuditReport, resolveComparisonTarget } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
 import { formatAbsoluteDate, formatRelativeTime, siteDisplayName } from '@/lib/format'
-import { SITE_NAME } from '@/lib/site'
+import { auditPageTitle } from '@/lib/page-titles'
+import { loadAuditTitleData } from '@/lib/sites/title-data'
 import { auditCooldown } from '@/lib/sites/audit-availability'
 import { loadRemainingAudits } from '@/lib/sites/audit-usage'
 import { createClient } from '@/lib/supabase/server'
 import type { Tables } from '@/lib/supabase/types'
 import { auditRouteParamsSchema, parseChecks, parseCompareParam } from '@/lib/validation/audit'
-
-export const metadata: Metadata = {
-  title: `Auditoría · ${SITE_NAME}`,
-}
 
 // `auditSite` (re-audit) can take ~10 s per fetch; the AI actions wait up to `AI_TIMEOUT_MS` (120 s)
 // for the model, so 150 s leaves room for the quota refund after a timeout.
@@ -41,6 +39,11 @@ type SearchParams = Record<string, string | string[] | undefined>
 type AuditPageProps = {
   params: Promise<{ siteId: string; auditId: string }>
   searchParams: Promise<SearchParams>
+}
+
+export async function generateMetadata({ params }: Pick<AuditPageProps, 'params'>): Promise<Metadata> {
+  const { name, createdAt } = await loadAuditTitleData(await params)
+  return { title: auditPageTitle(name, createdAt) }
 }
 
 function logQueryError(scope: string, error: unknown): never {
@@ -194,6 +197,7 @@ async function OkAuditBody(props: OkAuditBodyProps) {
 
   return (
     <>
+      <ReportIndex hasIssues={report.issues.length > 0} />
       <ReportView
         report={report}
         previous={previous ? { score: previous.score, date: previous.created_at } : null}

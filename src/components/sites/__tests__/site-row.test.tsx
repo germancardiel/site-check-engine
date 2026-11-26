@@ -40,6 +40,8 @@ describe('SiteRow (CA8)', () => {
     expect(siteLinks).toHaveLength(2)
     expect(siteLinks.first().text()).toBe('GCA Studio')
     expect(siteLinks.last().text()).toContain('Historial y evolución')
+    expect(siteLinks.last().attr('class')).toContain('min-h-10')
+    expect($('[role="meter"]').attr('aria-label')).toBe('Puntuación')
 
     const reportBtn = $('a[href="/sitios/site-123/auditorias/audit-456"]')
     expect(reportBtn).toHaveLength(1)
@@ -102,8 +104,10 @@ describe('SiteList — buscador y paginación (CA9)', () => {
 
     const prevBtn = nav.find('button').first()
     expect(prevBtn.attr('disabled')).toBeDefined()
-    expect(prevBtn.attr('class')).toContain('disabled:text-ink-muted')
-    expect(prevBtn.attr('class')).not.toContain('opacity-')
+    // T21: disabled buttons are faded and show a not-allowed cursor; the contrast of the faded
+    // text is checked in contrast.test.ts (DISABLED_PAIRS).
+    expect(prevBtn.attr('class')).toContain('disabled:opacity-80')
+    expect(prevBtn.attr('class')).toContain('disabled:cursor-not-allowed')
   })
 
   it('muestra el estado vacío cuando no hay sitios añadidos', () => {

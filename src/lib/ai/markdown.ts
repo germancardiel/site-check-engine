@@ -50,7 +50,7 @@ function actionLines(action: PlanAction, index: number, titles: Map<string, stri
     '',
   ]
   const related = relatedChecks(action.checkIds, titles)
-  if (related.length > 0) lines.push('**Checks relacionados:**', '', ...related, '')
+  if (related.length > 0) lines.push('**Comprobaciones relacionadas:**', '', ...related, '')
   return lines
 }
 
@@ -61,7 +61,7 @@ export function planToMarkdown(plan: ActionPlan, meta: PlanMarkdownMeta): string
     `# Plan de acción — ${escapeMarkdownText(meta.siteUrl)}`,
     '',
     `Generado el ${formatAbsoluteDate(meta.createdAt)}  `,
-    `Nota de la auditoría: ${meta.score === null ? 'sin nota' : `${meta.score}/100`}  `,
+    `Puntuación de la auditoría: ${meta.score === null ? 'sin datos' : `${meta.score}/100`}  `,
     `Generado con IA en ${SITE_NAME}`,
     '',
     '## Resumen',

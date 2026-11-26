@@ -3,6 +3,7 @@ import { StatusIcon } from '@/components/ui/status-icon'
 import type { AuditDiff } from '@/lib/audit/diff'
 import { AuditComparison } from './audit-comparison'
 import { CompareForm, type CompareOption } from './compare-form'
+import { REPORT_SECTION_IDS } from './report-anchors'
 
 export type Comparison =
   | { kind: 'none' }
@@ -14,7 +15,12 @@ type ComparisonSectionProps = { comparison: Comparison; options: CompareOption[]
 /** "Comparación" section of an audit: the diff, the AI summary and the selector of another audit. */
 export function ComparisonSection({ comparison, options, action, aiSummary }: ComparisonSectionProps) {
   return (
-    <section aria-labelledby="comparison-title" className="flex flex-col gap-5 border-t border-line pt-10">
+    <section
+      id={REPORT_SECTION_IDS.comparison}
+      tabIndex={-1}
+      aria-labelledby="comparison-title"
+      className="flex scroll-mt-24 flex-col gap-5 border-t border-line pt-10"
+    >
       <h2 id="comparison-title" className="text-2xl font-semibold">
         Comparación
       </h2>

@@ -25,7 +25,7 @@ export function AppHeader() {
           </Suspense>
           <ThemeToggle />
           <form action={logout} className="shrink-0">
-            <SubmitButton variant="quiet" pendingLabel="Cerrando sesión…" className="min-h-8 px-0">
+            <SubmitButton variant="quiet" pendingLabel="Cerrando sesión…" className="px-0">
               Cerrar sesión
             </SubmitButton>
           </form>

@@ -34,7 +34,7 @@ export default function Home() {
               <em className="font-serif font-normal tracking-normal text-accent-text">y para la IA</em>.
             </h1>
             <p className="max-w-[34rem] text-lg leading-relaxed text-ink-muted">
-              {SITE_NAME} analiza cualquier página pública, le pone una nota de 0 a 100 y te dice qué arreglar primero
+              {SITE_NAME} analiza cualquier página pública, le pone una puntuación de 0 a 100 y te dice qué arreglar primero
               para que Google y asistentes como ChatGPT, Claude o Perplexity entiendan y citen tu contenido.
             </p>
             <LandingCtas />

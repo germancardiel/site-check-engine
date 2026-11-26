@@ -46,6 +46,37 @@ export async function SessionCtas() {
   )
 }
 
+const HEADER_LINK =
+  'inline-flex min-h-10 items-center rounded-sm text-sm font-semibold text-ink underline decoration-line-strong transition-colors duration-200 ease-out hover:decoration-ink'
+
+function HeaderLoginLink() {
+  return (
+    <Link href="/login" className={HEADER_LINK}>
+      Entrar
+    </Link>
+  )
+}
+
+/** Header access link: "Entrar" for visitors, "Ir a mis sitios" for signed-in users. */
+export async function HeaderSessionLink() {
+  await connection()
+  if (!(await hasSession())) return <HeaderLoginLink />
+  return (
+    <Link href="/sitios" className={HEADER_LINK}>
+      Ir a mis sitios
+    </Link>
+  )
+}
+
+/** The header link inside its own `<Suspense>`: the static shell shows "Entrar". */
+export function LandingHeaderAccess() {
+  return (
+    <Suspense fallback={<HeaderLoginLink />}>
+      <HeaderSessionLink />
+    </Suspense>
+  )
+}
+
 /** Landing CTAs: sign-up and login for visitors, "Ir a tus sitios" for signed-in users. */
 export function LandingCtas() {
   return (

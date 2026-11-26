@@ -32,7 +32,7 @@ function ActionItem({ action, checks, index }: { action: PlanAction; checks: Che
         </p>
         {links.length > 0 ? (
           <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-muted">
-            <span>Checks relacionados:</span>
+            <span>Comprobaciones relacionadas:</span>
             {links.map((link) => (
               <a
                 key={link.id}

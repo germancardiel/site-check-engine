@@ -1,8 +1,9 @@
 import { PublicHeader } from '@/components/layout/public-header'
+import { LandingHeaderAccess } from './session-ctas'
 
-const ANCHOR_CLASS = 'rounded-sm text-sm font-medium text-ink-muted transition-colors duration-200 ease-out hover:text-ink'
+const ANCHOR_CLASS = 'inline-flex min-h-10 items-center rounded-sm text-sm font-medium text-ink-muted transition-colors duration-200 ease-out hover:text-ink'
 
-/** Landing header: wordmark and links to its sections. */
+/** Landing header: wordmark, links to its sections and "Entrar" (or "Ir a mis sitios"). */
 export function LandingHeader() {
   return (
     <PublicHeader>
@@ -20,6 +21,7 @@ export function LandingHeader() {
           </li>
         </ul>
       </nav>
+      <LandingHeaderAccess />
     </PublicHeader>
   )
 }
