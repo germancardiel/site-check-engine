@@ -39,7 +39,28 @@ describe('proxy', () => {
 
   it('redirige a /login a un usuario sin sesión que entra en /sitios', async () => {
     const response = await proxy(request('/sitios'))
-    expect(response.headers.get('location')).toBe('http://sce.test/login')
+    expect(response.headers.get('location')).toBe('http://sce.test/login?next=%2Fsitios')
+  })
+
+  it('añade next con la ruta pedida al redirigir a /login (CA7)', async () => {
+    const response = await proxy(request('/sitios/abc'))
+    expect(response.headers.get('location')).toBe('http://sce.test/login?next=%2Fsitios%2Fabc')
+  })
+
+  it('protege /nueva-contrasena sin sesión y la deja ver con sesión', async () => {
+    expect((await proxy(request('/nueva-contrasena'))).headers.get('location')).toBe(
+      'http://sce.test/login?next=%2Fnueva-contrasena',
+    )
+    auth.user = { id: 'u1' }
+    expect((await proxy(request('/nueva-contrasena'))).headers.get('location')).toBeNull()
+  })
+
+  it('deja /recuperar sin sesión y manda a /sitios con sesión; /auth/confirm es pública', async () => {
+    expect((await proxy(request('/recuperar'))).headers.get('location')).toBeNull()
+    expect((await proxy(request('/auth/confirm?token_hash=t&type=signup'))).headers.get('location')).toBeNull()
+    auth.user = { id: 'u1' }
+    expect((await proxy(request('/recuperar'))).headers.get('location')).toBe('http://sce.test/sitios')
+    expect((await proxy(request('/auth/confirm?code=c'))).headers.get('location')).toBeNull()
   })
 
   it('redirige a /sitios a un usuario con sesión que entra en /login o /registro', async () => {

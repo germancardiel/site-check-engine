@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { safeNextPath } from '../next-path'
 import { readSupabaseEnv } from './env'
 import type { Database } from './types'
 
@@ -11,9 +12,9 @@ export const HOME_PATH = '/sitios'
  * (a guard test enforces it). Without a session they redirect to `/login`; any other
  * unknown route reaches Next and gets a real 404. Pages still check `auth.getUser()`.
  */
-export const PRIVATE_PREFIXES = ['/sitios'] as const
-/** Auth pages: a signed-in user is sent to the app instead. */
-const AUTH_PATHS = ['/login', '/registro']
+export const PRIVATE_PREFIXES = ['/sitios', '/nueva-contrasena'] as const
+/** Auth pages: a signed-in user is sent to the app instead. `/auth/confirm` is public (not listed). */
+export const AUTH_PATHS = ['/login', '/registro', '/recuperar'] as const
 
 /** Decoded, lower-cased path so encoded or re-cased variants cannot dodge the guard. */
 function normalizePath(pathname: string): string {
@@ -75,6 +76,11 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   const redirectUrl = request.nextUrl.clone()
   redirectUrl.pathname = target
   redirectUrl.search = ''
+  if (target === LOGIN_PATH) {
+    // U14: come back to the requested page after signing in (validated again by `login`, D-SEC-14).
+    const next = safeNextPath(`${request.nextUrl.pathname}${request.nextUrl.search}`, '')
+    if (next) redirectUrl.searchParams.set('next', next)
+  }
   const redirect = NextResponse.redirect(redirectUrl)
   for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie)
   for (const [key, value] of Object.entries(extraHeaders)) redirect.headers.set(key, value)

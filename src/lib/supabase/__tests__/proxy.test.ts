@@ -79,6 +79,18 @@ describe('getAuthRedirect', () => {
     expect(getAuthRedirect('/registro', false)).toBeNull()
   })
 
+  it('trata /recuperar como página de auth y /nueva-contrasena como privada', () => {
+    expect(getAuthRedirect('/recuperar', false)).toBeNull()
+    expect(getAuthRedirect('/recuperar', true)).toBe('/sitios')
+    expect(getAuthRedirect('/nueva-contrasena', false)).toBe('/login')
+    expect(getAuthRedirect('/nueva-contrasena', true)).toBeNull()
+  })
+
+  it('deja pública /auth/confirm, con y sin sesión', () => {
+    expect(getAuthRedirect('/auth/confirm', false)).toBeNull()
+    expect(getAuthRedirect('/auth/confirm', true)).toBeNull()
+  })
+
   it('deja la portada pública con y sin sesión', () => {
     expect(getAuthRedirect('/', false)).toBeNull()
     expect(getAuthRedirect('/', true)).toBeNull()
@@ -163,10 +175,19 @@ describe('updateSession', () => {
     expect(response.headers.get('x-middleware-next')).toBe('1')
   })
 
-  it('redirige a /login sin sesión en /sitios', async () => {
+  it('redirige a /login sin sesión en /sitios, con la ruta pedida en next', async () => {
     const response = await updateSession(request('/sitios?x=1'))
     expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toBe('http://sce.test/login?next=%2Fsitios%3Fx%3D1')
+  })
+
+  it('no pone en next una ruta que no sea interna (D-SEC-14)', async () => {
+    const response = await updateSession(request('/sitios/a%5Cb'))
     expect(response.headers.get('location')).toBe('http://sce.test/login')
+    const internal = await updateSession(request('/sitios/abc'))
+    expect(internal.headers.get('location')).toBe('http://sce.test/login?next=%2Fsitios%2Fabc')
+    const doubled = await updateSession(request('http://sce.test//sitios'))
+    expect(doubled.headers.get('location')).toBe('http://sce.test/login')
   })
 
   it('redirige a /sitios con sesión en /login', async () => {
@@ -193,7 +214,7 @@ describe('updateSession', () => {
   it('conserva las cookies refrescadas en una redirección', async () => {
     state.refreshed = [{ name: 'sb-token', value: '', options: { path: '/', maxAge: 0 } }]
     const response = await updateSession(request('/sitios', 'sb-token=caducado'))
-    expect(response.headers.get('location')).toBe('http://sce.test/login')
+    expect(response.headers.get('location')).toBe('http://sce.test/login?next=%2Fsitios')
     expect(response.cookies.get('sb-token')?.value).toBe('')
     expect(response.headers.get('cache-control')).toBe('private, no-store')
   })

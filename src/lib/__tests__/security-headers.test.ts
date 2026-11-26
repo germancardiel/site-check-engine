@@ -98,11 +98,13 @@ describe('buildHeaderRules', () => {
     ])
   })
 
-  it('marca /sitios y sus subrutas como private, no-store después de la regla general', () => {
+  it('marca /sitios, /nueva-contrasena y sus subrutas como private, no-store después de la regla general', () => {
     const rules = buildHeaderRules(PROD)
     expect(rules.slice(1)).toEqual([
       { source: '/sitios', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
       { source: '/sitios/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
+      { source: '/nueva-contrasena', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
+      { source: '/nueva-contrasena/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
     ])
     expect(PRIVATE_CACHE_CONTROL).not.toMatch(/public/)
   })

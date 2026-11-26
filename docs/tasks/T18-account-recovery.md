@@ -29,7 +29,9 @@ Que ningún usuario se quede fuera de su cuenta: recuperar la contraseña, confi
 - [ ] CA9: Las 4 puertas pasan en verde y `src/__tests__/proxy.test.ts` se actualiza sin perder casos.
 
 ## Reglas especialmente relevantes
-D-SEC-04, D-SEC-06, D-SEC-08, D-SEC-14, D-QA-08, D-UX-02, D-UX-06, D-UX-08, D-UX-09, D-TEST-01, D-TEST-05.
+D-SEC-04, D-SEC-06, D-SEC-08, D-SEC-14, D-QA-08, D-UX-02, D-UX-06, D-UX-08, D-TEST-01, D-TEST-05.
+
+> Corrección del Orquestador (ronda 1): D-UX-09 (errores junto al campo) se quitó de esta lista por error de definición; ya está en el alcance de T19 para todos los formularios de autenticación, incluidos `/recuperar` y `/nueva-contrasena`. Ningún CA de T18 lo exigía.
 
 ## Notas técnicas
 - Guía de referencia: patrón de `@supabase/ssr` para Next App Router (route handler de confirmación con `verifyOtp({ type, token_hash })`).

@@ -52,7 +52,7 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-SEC-11 | M | El fetcher y la URL de un sitio solo admiten los puertos por defecto (80 para `http`, 443 para `https`) | Tests de `site.test.ts` y `fetcher*.test.ts` con `:22` y `:8080` |
 | D-SEC-12 | B | Todo `href` construido con datos de la BD o de la IA se valida como `http:`/`https:` (o ruta interna que empiece por `/` y no por `//`) antes de pintarse | Lectura de JSX + test con `javascript:` |
 | D-SEC-13 | M | Cabeceras en todas las respuestas: `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` y una `Content-Security-Policy` con al menos `default-src`, `frame-ancestors` y `object-src 'none'`. Las páginas con sesión llevan `Cache-Control: private, no-store` | `curl -I` contra `next start` en `/` y en `/sitios` |
-| D-SEC-14 | M | Toda redirección a una ruta recibida del usuario (`?next=`) se valida como ruta interna (empieza por `/`, no por `//` ni `/\\`) | Test del validador |
+| D-SEC-14 | M | Toda redirección a una ruta recibida del usuario (`?next=`) se valida como ruta interna: empieza por `/` y no por `//` ni `/\\`, y además la ruta **normalizada** por `new URL(next, origen)` (sin segmentos `.`/`..`, sin escapes `%2E`/`%2F`) sigue siendo del mismo origen y su `pathname` no empieza por `//` | Test del validador con `/.//evil.com`, `/sitios/..//evil.com`, `/%2E/%2Fevil.com` |
 
 Ejemplo D-SEC-04:
 ```ts

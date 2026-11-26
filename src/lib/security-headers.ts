@@ -15,7 +15,12 @@ export const PRIVATE_CACHE_CONTROL = 'private, no-store'
 export const PUBLIC_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 
 /** Routes rendered with the user's session (D-SEC-13). Keep in sync with `PRIVATE_PREFIXES`. */
-export const PRIVATE_SOURCES = ['/sitios', '/sitios/:path*'] as const
+export const PRIVATE_SOURCES = [
+  '/sitios',
+  '/sitios/:path*',
+  '/nueva-contrasena',
+  '/nueva-contrasena/:path*',
+] as const
 
 /**
  * `https://x.supabase.co/rest` → `['https://x.supabase.co', 'wss://x.supabase.co']`.
