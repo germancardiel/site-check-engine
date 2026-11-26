@@ -1,20 +1,24 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState } from 'react'
-import { deleteSite } from '@/app/(app)/sitios/actions'
-import { FormFeedback } from '@/components/ui/form-feedback'
+import { useEffect, useRef, useState } from 'react'
 import { buttonClass } from '@/components/ui/button-styles'
 import { SubmitButton } from '@/components/ui/submit-button'
-import type { SiteActionState } from '@/lib/validation/site'
-
-const INITIAL_STATE: SiteActionState = {}
 
 const QUIET_BUTTON = buttonClass('quiet')
 const SECONDARY_BUTTON = buttonClass('secondary')
 
+type DeleteSiteFormProps = {
+  siteId: string
+  siteName: string
+  /**
+   * Shared `deleteSite` action of the list: its result ("Sitio borrado." or the error) is announced
+   * by the list, because this row disappears once the site is deleted (D-UX-10).
+   */
+  formAction: (formData: FormData) => void
+}
+
 /** Two-step delete: the first click asks for confirmation, the second one deletes. */
-export function DeleteSiteForm({ siteId, siteName }: { siteId: string; siteName: string }) {
-  const [state, formAction] = useActionState(deleteSite, INITIAL_STATE)
+export function DeleteSiteForm({ siteId, siteName, formAction }: DeleteSiteFormProps) {
   const [confirming, setConfirming] = useState(false)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -29,17 +33,9 @@ export function DeleteSiteForm({ siteId, siteName }: { siteId: string; siteName:
 
   if (!confirming) {
     return (
-      <div className="flex flex-col gap-2">
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={() => setConfirming(true)}
-          className={QUIET_BUTTON}
-        >
-          Borrar
-        </button>
-        <FormFeedback error={state.error} />
-      </div>
+      <button ref={triggerRef} type="button" onClick={() => setConfirming(true)} className={QUIET_BUTTON}>
+        Borrar
+      </button>
     )
   }
 
@@ -68,7 +64,6 @@ export function DeleteSiteForm({ siteId, siteName }: { siteId: string; siteName:
           Cancelar
         </button>
       </div>
-      <FormFeedback error={state.error} />
     </form>
   )
 }

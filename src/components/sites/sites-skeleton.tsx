@@ -3,7 +3,7 @@ const BLOCK = 'animate-pulse rounded-md bg-line motion-reduce:animate-none'
 /** Placeholder with the shape of `/sitios`: the inline form and a few site rows. */
 export function SitesSkeleton() {
   return (
-    <div role="status" aria-live="polite" className="flex flex-col gap-8">
+    <div role="status" className="flex flex-col gap-8">
       <span className="sr-only">Cargando tus sitios…</span>
       <div aria-hidden="true" className="flex flex-col gap-3 rounded-md border border-line bg-panel p-4 sm:p-5">
         <div className={`${BLOCK} h-5 w-32`} />

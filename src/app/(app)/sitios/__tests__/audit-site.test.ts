@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  AUDIT_ID,
   SITE_ID,
   callsOf,
   form,
   from,
   getUser,
   queueResults,
+  redirect,
   revalidatePath,
   rpc,
   runAudit,
@@ -132,8 +134,8 @@ describe('auditSite', () => {
     runAudit.mockResolvedValue({ status: 'ok', score: 80, seoScore: 90, aiScore: 70, checks })
     for (let i = 0; i < 15; i++) {
       queueResults('sites', { data: site, error: null })
-      queueResults('audits', { error: null })
-      expect(await auditSite({}, form({ siteId: SITE_ID }))).toEqual({ message: 'Auditoría completada.' })
+      queueResults('audits', { data: { id: AUDIT_ID }, error: null })
+      await expect(auditSite({}, form({ siteId: SITE_ID }))).rejects.toThrow(`NEXT_REDIRECT:/sitios/${SITE_ID}/auditorias/${AUDIT_ID}`)
     }
     queueResults('sites', { data: site, error: null })
     const result = await auditSite({}, form({ siteId: SITE_ID }))
@@ -157,14 +159,16 @@ describe('auditSite', () => {
     expect(rpc).not.toHaveBeenCalled()
   })
 
-  it('inserta una auditoría ok con notas y checks y revalida /sitios', async () => {
+  it('inserta una auditoría ok, revalida y redirige a /sitios/{siteId}/auditorias/{id} con el id insertado (CA1)', async () => {
     signedIn()
     queueResults('sites', { data: site, error: null })
     rpc.mockResolvedValue({ data: 'ok', error: null })
-    queueResults('audits', { error: null })
+    queueResults('audits', { data: { id: AUDIT_ID }, error: null })
     runAudit.mockResolvedValue({ status: 'ok', score: 80, seoScore: 90, aiScore: 70, checks })
-    const result = await auditSite({}, form({ siteId: SITE_ID }))
-    expect(result).toEqual({ message: 'Auditoría completada.' })
+    await expect(auditSite({}, form({ siteId: SITE_ID }))).rejects.toThrow(
+      `NEXT_REDIRECT:/sitios/${SITE_ID}/auditorias/${AUDIT_ID}`,
+    )
+    expect(redirect).toHaveBeenCalledExactlyOnceWith(`/sitios/${SITE_ID}/auditorias/${AUDIT_ID}`)
     expect(runAudit).toHaveBeenCalledWith('https://ejemplo.com', { now: expect.any(Date) })
     expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(runAudit.mock.invocationCallOrder[0])
     expect(callsOf('audits')).toEqual([
@@ -183,19 +187,22 @@ describe('auditSite', () => {
           },
         ],
       },
+      { method: 'select', args: ['id'] },
+      { method: 'single', args: [] },
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/sitios')
     expect(revalidatePath).toHaveBeenCalledWith(`/sitios/${SITE_ID}`)
   })
 
-  it('inserta también una auditoría fallida y devuelve su mensaje', async () => {
+  it('inserta también una auditoría fallida y redirige a su página, que explica el error', async () => {
     signedIn()
     queueResults('sites', { data: site, error: null })
     rpc.mockResolvedValue({ data: 'ok', error: null })
-    queueResults('audits', { error: null })
+    queueResults('audits', { data: { id: AUDIT_ID }, error: null })
     runAudit.mockResolvedValue({ status: 'error', error: 'La página tardó demasiado en responder.' })
-    const result = await auditSite({}, form({ siteId: SITE_ID }))
-    expect(result).toEqual({ error: 'La página tardó demasiado en responder.' })
+    await expect(auditSite({}, form({ siteId: SITE_ID }))).rejects.toThrow(
+      `NEXT_REDIRECT:/sitios/${SITE_ID}/auditorias/${AUDIT_ID}`,
+    )
     expect(callsOf('audits')).toEqual([
       {
         method: 'insert',
@@ -209,6 +216,8 @@ describe('auditSite', () => {
           },
         ],
       },
+      { method: 'select', args: ['id'] },
+      { method: 'single', args: [] },
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/sitios')
     expect(revalidatePath).toHaveBeenCalledWith(`/sitios/${SITE_ID}`)
@@ -225,5 +234,24 @@ describe('auditSite', () => {
     expect(result).toEqual({ error: 'No se pudo guardar la auditoría. Inténtalo de nuevo.' })
     expect(console.error).toHaveBeenCalledWith('[auditSite] insert', dbError)
     expect(revalidatePath).not.toHaveBeenCalled()
+    expect(redirect).not.toHaveBeenCalled()
+  })
+
+  it('si el motor lanza devuelve un error genérico en vez de romper la página (D-UX-12)', async () => {
+    signedIn()
+    queueResults('sites', { data: site, error: null })
+    rpc.mockResolvedValue({ data: 'ok', error: null })
+    const boom = new Error('unexpected')
+    runAudit.mockRejectedValue(boom)
+    const result = await auditSite({}, form({ siteId: SITE_ID }))
+    expect(result).toEqual({ error: 'No se pudo completar la auditoría. Inténtalo de nuevo.' })
+    expect(console.error).toHaveBeenCalledWith('[auditSite]', boom)
+    expect(redirect).not.toHaveBeenCalled()
+  })
+
+  it('si falla la sesión por red tampoco lanza', async () => {
+    getUser.mockRejectedValue(new Error('fetch failed'))
+    const result = await auditSite({}, form({ siteId: SITE_ID }))
+    expect(result).toEqual({ error: 'No se pudo completar la auditoría. Inténtalo de nuevo.' })
   })
 })

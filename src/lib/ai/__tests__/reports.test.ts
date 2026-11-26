@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AI_QUOTA_EXHAUSTED_MESSAGE,
   EFFORT_LABEL,
   IMPACT_LABEL,
   madridDay,
@@ -110,5 +111,13 @@ describe('remainingGenerations / quotaLabel', () => {
   it('etiqueta impacto y esfuerzo con texto', () => {
     expect(IMPACT_LABEL.alto).toBe('Impacto alto')
     expect(EFFORT_LABEL.bajo).toBe('Esfuerzo bajo')
+  })
+})
+
+describe('AI_QUOTA_EXHAUSTED_MESSAGE (T20)', () => {
+  it('dice cuántas generaciones se han usado y cuándo se renuevan', () => {
+    expect(AI_QUOTA_EXHAUSTED_MESSAGE).toBe(
+      'Has usado las 10 generaciones de hoy; se renuevan a medianoche (hora de Madrid).',
+    )
   })
 })

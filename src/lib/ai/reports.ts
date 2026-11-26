@@ -70,6 +70,9 @@ export function quotaLabel(remaining: number): string {
   return remaining === 1 ? 'Te queda 1 generación hoy.' : `Te quedan ${remaining} generaciones hoy.`
 }
 
+/** Why the AI buttons are disabled when today's generations are used up (D-UX-11). */
+export const AI_QUOTA_EXHAUSTED_MESSAGE = `Has usado las ${AI_DAILY_LIMIT} generaciones de hoy; se renuevan a medianoche (hora de Madrid).`
+
 export type StoredReport<T> =
   | { status: 'none' }
   | { status: 'invalid' }

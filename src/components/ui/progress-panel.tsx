@@ -4,12 +4,19 @@ import { useEffect, useState } from 'react'
 import { ChevronIcon } from '@/components/ui/chevron-icon'
 import { formatElapsed } from '@/lib/format'
 
+type ProgressPanelProps = {
+  title: string
+  steps: readonly string[]
+  /** Expected wait, e.g. "Suele tardar entre 10 y 60 segundos." */
+  hint: string
+}
+
 /**
- * Progress log while an AI report is generated: elapsed time (mm:ss) and the expected wait.
- * Mounted only while pending, so every generation starts at 00:00. The clock is not announced:
- * the parent's live region announces only the start and the end.
+ * Progress log of a slow action (audit, AI): elapsed time (mm:ss), the steps and the expected wait.
+ * Mounted only while pending, so every run starts at 00:00. Nothing here is announced: the form's
+ * single `role="status"` announces the start and the end (D-UX-10).
  */
-export function AiProgress({ steps }: { steps: readonly string[] }) {
+export function ProgressPanel({ title, steps, hint }: ProgressPanelProps) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
@@ -20,10 +27,10 @@ export function AiProgress({ steps }: { steps: readonly string[] }) {
 
   return (
     <div className="w-full max-w-xl rounded-md border border-line bg-panel">
-      <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line px-4 py-2.5">
         <span className="flex items-center gap-2 text-sm font-semibold text-ink">
           <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-ink-muted motion-reduce:animate-none" />
-          Generando con IA
+          {title}
         </span>
         <span aria-hidden="true" className="font-mono text-sm text-ink tabular-nums">
           {formatElapsed(elapsed)}
@@ -37,7 +44,7 @@ export function AiProgress({ steps }: { steps: readonly string[] }) {
           </li>
         ))}
       </ol>
-      <p className="border-t border-line px-4 py-2.5 text-sm text-ink-muted">Puede tardar uno o dos minutos.</p>
+      <p className="border-t border-line px-4 py-2.5 text-sm text-ink-muted">{hint}</p>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { ChevronIcon } from '@/components/ui/chevron-icon'
 import { ScoreMeter } from '@/components/ui/score-meter'
 import { StatusIcon } from '@/components/ui/status-icon'
 import { formatRelativeTime, siteDisplayName } from '@/lib/format'
+import type { AuditCooldown } from '@/lib/sites/audit-availability'
 import type { AuditStatus } from '@/lib/supabase/types'
 import { AuditSiteForm } from './audit-site-form'
 import { DeleteSiteForm } from './delete-site-form'
@@ -24,6 +25,17 @@ export type SiteWithLatestAudit = {
   url: string
   name: string | null
   latestAudit: LatestAudit | null
+  /** 1-minute wait before this site can be audited again (`null` = none). */
+  cooldown: AuditCooldown
+}
+
+type SiteRowProps = {
+  site: SiteWithLatestAudit
+  now: Date
+  /** Audits left today for the user (`null` = unknown); the list shows the figure once. */
+  remainingAudits: number | null
+  /** Shared delete action of the list (it announces the result). */
+  deleteAction: (formData: FormData) => void
 }
 
 const LINK_CLASS = 'rounded-sm underline decoration-line-strong transition-colors duration-200 ease-out hover:decoration-ink'
@@ -78,7 +90,7 @@ function LastAudit({ audit, siteId, now }: { audit: LatestAudit | null; siteId: 
 }
 
 /** One site of the list: name and URL, latest scores, when it was audited and its actions. */
-export function SiteRow({ site, now }: { site: SiteWithLatestAudit; now: Date }) {
+export function SiteRow({ site, now, remainingAudits, deleteAction }: SiteRowProps) {
   const displayName = siteDisplayName(site.name, site.url)
   const siteHref = `/sitios/${site.id}`
 
@@ -106,8 +118,11 @@ export function SiteRow({ site, now }: { site: SiteWithLatestAudit; now: Date })
           siteId={site.id}
           siteName={displayName}
           variant={site.latestAudit ? 'secondary' : 'primary'}
+          cooldown={site.cooldown}
+          remaining={remainingAudits}
+          showQuota={false}
         />
-        <DeleteSiteForm siteId={site.id} siteName={displayName} />
+        <DeleteSiteForm siteId={site.id} siteName={displayName} formAction={deleteAction} />
       </div>
     </li>
   )

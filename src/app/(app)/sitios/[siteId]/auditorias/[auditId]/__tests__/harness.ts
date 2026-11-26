@@ -54,7 +54,7 @@ export const AUDIT_ID = '0b3c4a9e-5d1f-4f7a-9c2b-8e6d1a2b3c4d'
 export const PREV_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
 export const DETAIL = `/sitios/${SITE_ID}/auditorias/${AUDIT_ID}`
 
-export const QUOTA_MSG = 'Has alcanzado el límite diario de generaciones con IA. Vuelve mañana.'
+export const QUOTA_MSG = 'Has usado las 10 generaciones de hoy; se renuevan a medianoche (hora de Madrid).'
 export const FAILED_MSG = 'No se pudo generar el plan. Inténtalo de nuevo.'
 export const CHANGES_FAILED_MSG = 'No se pudo generar el resumen. Inténtalo de nuevo.'
 

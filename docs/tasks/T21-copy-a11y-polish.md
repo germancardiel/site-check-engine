@@ -41,3 +41,6 @@ D-UX-02…06, D-UX-10, D-QA-04, D-QA-06, D-QA-08, D-TEST-05.
 ## Notas técnicas
 - Reutiliza `StatusIcon`, `buttonClass`, `checkAnchorId` y los helpers de `src/lib/anchor.ts`.
 - El índice del informe es un Server Component; los enlaces son anclas normales.
+
+## Añadido por el Orquestador tras T20
+- En `src/app/(app)/sitios/[siteId]/auditorias/[auditId]/__tests__/actions-plan.test.ts:111`, el caso `generateChanges` del describe.each debe comprobar que no se llama a `generateChangeSummary` (hoy comprueba `generateActionPlan`).

@@ -4,19 +4,21 @@ import { connection } from 'next/server'
 import { Suspense, type ReactNode } from 'react'
 import { ChangesSection } from '@/components/ai/changes-section'
 import { PlanSection } from '@/components/ai/plan-section'
-import { AuditComparison } from '@/components/audits/audit-comparison'
-import { CompareForm, type CompareOption } from '@/components/audits/compare-form'
+import type { CompareOption } from '@/components/audits/compare-form'
+import { ComparisonSection, type Comparison } from '@/components/audits/comparison-section'
 import { DetailSkeleton } from '@/components/audits/detail-skeleton'
 import { ReportView } from '@/components/audits/report-view'
 import { AuditSiteForm } from '@/components/sites/audit-site-form'
 import { BackLink } from '@/components/ui/back-link'
 import { StatusIcon } from '@/components/ui/status-icon'
 import { madridDay, readAuditReports, remainingGenerations } from '@/lib/ai/reports'
-import { diffAudits, type AuditDiff } from '@/lib/audit/diff'
+import { diffAudits } from '@/lib/audit/diff'
 import { buildAuditReport, resolveComparisonTarget } from '@/lib/audit/present'
 import type { CheckResult } from '@/lib/audit/types'
 import { formatAbsoluteDate, formatRelativeTime, siteDisplayName } from '@/lib/format'
 import { SITE_NAME } from '@/lib/site'
+import { auditCooldown } from '@/lib/sites/audit-availability'
+import { loadRemainingAudits } from '@/lib/sites/audit-usage'
 import { createClient } from '@/lib/supabase/server'
 import type { Tables } from '@/lib/supabase/types'
 import { auditRouteParamsSchema, parseChecks, parseCompareParam } from '@/lib/validation/audit'
@@ -41,11 +43,6 @@ type AuditPageProps = {
   searchParams: Promise<SearchParams>
 }
 
-type Comparison =
-  | { kind: 'none' }
-  | { kind: 'invalid' }
-  | { kind: 'ok'; since: string; targetId: string; diff: AuditDiff }
-
 function logQueryError(scope: string, error: unknown): never {
   console.error(`[AuditPage] ${scope}`, error)
   throw new Error('No se pudo cargar la auditoría.')
@@ -63,7 +60,12 @@ async function loadAudit(rawParams: { siteId: string; auditId: string }) {
   if (!user) redirect('/login')
 
   const [siteResult, auditResult] = await Promise.all([
-    supabase.from('sites').select('id, url, name').eq('id', siteId).eq('user_id', user.id).maybeSingle(),
+    supabase
+      .from('sites')
+      .select('id, url, name, last_audit_started_at')
+      .eq('id', siteId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
     supabase
       .from('audits')
       .select(AUDIT_COLUMNS)
@@ -132,31 +134,12 @@ function compare(audit: AuditRow, checks: CheckResult[], target: AuditRow | null
   return { kind: 'ok', since: target.created_at, targetId: target.id, diff }
 }
 
-type ComparisonSectionProps = { comparison: Comparison; options: CompareOption[]; action: string; aiSummary: ReactNode }
-
-function ComparisonSection({ comparison, options, action, aiSummary }: ComparisonSectionProps) {
+function InvalidChecksAlert() {
   return (
-    <section aria-labelledby="comparison-title" className="flex flex-col gap-5 border-t border-line pt-10">
-      <h2 id="comparison-title" className="text-2xl font-semibold">
-        Comparación
-      </h2>
-      {comparison.kind === 'ok' ? <AuditComparison since={comparison.since} diff={comparison.diff} /> : null}
-      {comparison.kind === 'none' ? (
-        <p className="text-ink-muted">No hay una auditoría anterior con la que comparar.</p>
-      ) : null}
-      {comparison.kind === 'invalid' ? (
-        <p role="alert" className="flex items-start gap-2 text-ink">
-          <StatusIcon status="fail" className="mt-1" />
-          No se pudo cargar la comparación. Prueba con otra auditoría.
-        </p>
-      ) : null}
-      {aiSummary}
-      <CompareForm
-        action={action}
-        options={options}
-        selectedId={comparison.kind === 'ok' ? comparison.targetId : (options[0]?.id ?? '')}
-      />
-    </section>
+    <p role="alert" className="flex items-start gap-2 rounded-md border border-fail px-4 py-3 text-ink">
+      <StatusIcon status="fail" className="mt-1" />
+      No se pudieron mostrar los resultados de esta auditoría. Vuelve a auditar el sitio.
+    </p>
   )
 }
 
@@ -164,23 +147,20 @@ type OkAuditBodyProps = {
   supabase: Supabase
   userId: string
   siteUrl: string
-  displayName: string
   audit: AuditRow
   compareParam: string | string[] | undefined
   action: string
   now: Date
+  /** "Volver a auditar" form, with the limits of the site already applied. */
+  reAuditAction: ReactNode
 }
 
-async function OkAuditBody({ supabase, userId, siteUrl, displayName, audit, compareParam, action, now }: OkAuditBodyProps) {
+async function OkAuditBody(props: OkAuditBodyProps) {
+  const { supabase, userId, siteUrl, audit, compareParam, action, now, reAuditAction } = props
   const checks = parseChecks(audit.checks)
   if (!checks.ok) {
     console.error('[AuditPage] invalid checks', audit.id, checks.error)
-    return (
-      <p role="alert" className="flex items-start gap-2 rounded-md border border-fail px-4 py-3 text-ink">
-        <StatusIcon status="fail" className="mt-1" />
-        No se pudieron mostrar los resultados de esta auditoría. Vuelve a auditar el sitio.
-      </p>
-    )
+    return <InvalidChecksAlert />
   }
 
   const requestedId = parseCompareParam(compareParam, audit.id)
@@ -198,6 +178,7 @@ async function OkAuditBody({ supabase, userId, siteUrl, displayName, audit, comp
       report={ai.reports.changes}
       previousDate={previous.created_at}
       comparingOther={target !== null && target.audit.id !== previous.id}
+      remaining={ai.remaining}
       loadError={ai.loadError}
     />
   ) : null
@@ -217,7 +198,7 @@ async function OkAuditBody({ supabase, userId, siteUrl, displayName, audit, comp
         report={report}
         previous={previous ? { score: previous.score, date: previous.created_at } : null}
         relativeTime={formatRelativeTime(audit.created_at, now)}
-        reAuditAction={<AuditSiteForm siteId={audit.site_id} siteName={displayName} label="Volver a auditar" variant="primary" />}
+        reAuditAction={reAuditAction}
       />
       <PlanSection
         siteId={audit.site_id}
@@ -242,6 +223,17 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
   const { supabase, userId, site, audit } = await loadAudit(rawParams)
   const displayName = siteDisplayName(site.name, site.url)
   const action = `/sitios/${site.id}/auditorias/${audit.id}`
+  // What limits "Volver a auditar": the 1-minute wait of the site and the audits left today (D-UX-11).
+  const reAudit = (
+    <AuditSiteForm
+      siteId={site.id}
+      siteName={displayName}
+      label="Volver a auditar"
+      variant="primary"
+      cooldown={auditCooldown(site.last_audit_started_at, now)}
+      remaining={await loadRemainingAudits(supabase, userId, now)}
+    />
+  )
 
   return (
     <>
@@ -265,18 +257,18 @@ async function AuditContent({ params, searchParams }: AuditPageProps) {
             </time>{' '}
             · {formatRelativeTime(audit.created_at, now)}
           </p>
-          <AuditSiteForm siteId={site.id} siteName={displayName} label="Volver a auditar" variant="primary" />
+          {reAudit}
         </section>
       ) : (
         <OkAuditBody
           supabase={supabase}
           userId={userId}
           siteUrl={site.url}
-          displayName={displayName}
           audit={audit}
           compareParam={query.comparar}
           action={action}
           now={now}
+          reAuditAction={reAudit}
         />
       )}
     </>

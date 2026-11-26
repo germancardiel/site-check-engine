@@ -96,13 +96,35 @@ describe.each([
   })
 })
 
+describe.each([
+  ['generatePlan', generatePlan, FAILED_MSG],
+  ['generateChanges', generateChanges, CHANGES_FAILED_MSG],
+] as const)('%s: nunca lanza al cliente (D-UX-12)', (scope, action, failedMsg) => {
+  it('si la sesión o Supabase lanzan devuelve un error recuperable y lo registra', async () => {
+    const boom = new Error('fetch failed')
+    getUser.mockRejectedValue(boom)
+    const result = await action({}, form())
+    expect(result).toEqual({ error: failedMsg })
+    expect(console.error).toHaveBeenCalledWith(`[${scope}]`, boom)
+  })
+
+  it('si el rpc de cuota lanza tampoco llama al modelo ni lanza', async () => {
+    signedIn()
+    okAudit({ data: { ...audit, id: 'prev' }, error: null })
+    rpc.mockRejectedValue(new Error('socket hang up'))
+    const result = await action({}, form())
+    expect(result).toEqual({ error: failedMsg })
+    expect(generateActionPlan).not.toHaveBeenCalled()
+  })
+})
+
 describe('generatePlan', () => {
   it('con la cuota agotada no llama al modelo ni guarda nada (D-AI-03)', async () => {
     signedIn()
     okAudit()
     quota(-1)
     const result = await generatePlan({}, form())
-    expect(result).toEqual({ error: QUOTA_MSG })
+    expect(result).toEqual({ error: QUOTA_MSG, quotaExceeded: true })
     expect(rpc).toHaveBeenCalledWith('consume_ai_quota', { p_limit: 10 })
     expect(generateActionPlan).not.toHaveBeenCalled()
     expect(from).not.toHaveBeenCalledWith('ai_reports')

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { parseHtml } from '@/lib/audit/parse'
 import { FormFeedback } from '../form-feedback'
 import { PasswordField, PasswordFieldView } from '../password-field'
+import { SubmitButton } from '../submit-button'
 import { TextField } from '../text-field'
 
 describe('TextField', () => {
@@ -100,5 +101,49 @@ describe('PasswordField (CA6)', () => {
     )
     expect($('input#password').attr('aria-invalid')).toBe('true')
     expect($('input#password').attr('aria-describedby')).toBe('password-hint password-error')
+  })
+})
+
+describe('FormFeedback: progreso en la misma región (T20)', () => {
+  it('mientras la action corre anuncia el progreso en el único role="status" y oculta el resultado anterior', () => {
+    const $ = parseHtml(renderToStaticMarkup(<FormFeedback error="Falló" message="Hecho" pending="Trabajando." />))
+    expect($('[role="status"]')).toHaveLength(1)
+    expect($('[role="status"]').text()).toBe('Trabajando.')
+    expect($('[role="status"] .sr-only').text()).toBe('Trabajando.')
+    expect($('[role="alert"]').text()).toBe('')
+  })
+
+  it('el error puede llevar un id para enlazarlo desde un botón', () => {
+    const $ = parseHtml(renderToStaticMarkup(<FormFeedback error="Falló" errorId="x-error" />))
+    expect($('#x-error').text()).toBe('Falló')
+  })
+})
+
+describe('SubmitButton (T20)', () => {
+  it('desactivado por un límite: disabled y describe con el motivo, sin texto de progreso', () => {
+    const $ = parseHtml(
+      renderToStaticMarkup(
+        <SubmitButton pendingLabel="Enviando…" disabled describedBy="motivo">
+          Enviar
+        </SubmitButton>,
+      ),
+    )
+    const button = $('button')
+    expect(button.attr('disabled')).toBeDefined()
+    expect(button.attr('aria-disabled')).toBe('true')
+    expect(button.attr('aria-describedby')).toBe('motivo')
+    expect(button.text()).toBe('Enviar')
+  })
+
+  it('con pending muestra el texto de progreso', () => {
+    const $ = parseHtml(
+      renderToStaticMarkup(
+        <SubmitButton pendingLabel="Enviando…" pending>
+          Enviar
+        </SubmitButton>,
+      ),
+    )
+    expect($('button').text()).toBe('Enviando…')
+    expect($('button').attr('disabled')).toBeDefined()
   })
 })

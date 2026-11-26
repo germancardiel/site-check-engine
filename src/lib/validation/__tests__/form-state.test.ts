@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { describe, expect, it } from 'vitest'
 import { registerSchema } from '@/lib/validation/auth'
-import { readFormValues, validationErrorState, zodFieldErrors } from '@/lib/validation/form-state'
-import { siteSchema } from '@/lib/validation/site'
+import { FORM_VALUE_MAX_LENGTH, readFormValues, validationErrorState, zodFieldErrors } from '@/lib/validation/form-state'
+import { SITE_NAME_MAX_LENGTH, SITE_URL_MAX_LENGTH, siteSchema } from '@/lib/validation/site'
 
 function errorOf(schema: z.ZodType, input: unknown): z.ZodError {
   const parsed = schema.safeParse(input)
@@ -59,5 +59,26 @@ describe('readFormValues', () => {
     data.set('password', 'secreto123')
     data.set('name', new Blob(['x']))
     expect(readFormValues(data, ['url', 'name', 'email'])).toEqual({ url: ' ejemplo.com ' })
+  })
+
+  it('recorta cada valor a la longitud máxima de su campo (URL 2048, nombre 80, email 254) (T20)', () => {
+    const data = new FormData()
+    data.set('url', 'u'.repeat(5000))
+    data.set('name', 'n'.repeat(500))
+    data.set('email', 'e'.repeat(1000))
+    data.set('other', 'o'.repeat(3000))
+    const values = readFormValues(data, ['url', 'name', 'email', 'other'])
+    expect(values.url).toHaveLength(2048)
+    expect(values.name).toHaveLength(80)
+    expect(values.email).toHaveLength(254)
+    expect(values.other).toHaveLength(2048)
+  })
+
+  it('no recorta los valores que caben y los límites coinciden con los de los esquemas', () => {
+    const data = new FormData()
+    data.set('name', 'n'.repeat(80))
+    expect(readFormValues(data, ['name'])).toEqual({ name: 'n'.repeat(80) })
+    expect(FORM_VALUE_MAX_LENGTH.url).toBe(SITE_URL_MAX_LENGTH)
+    expect(FORM_VALUE_MAX_LENGTH.name).toBe(SITE_NAME_MAX_LENGTH)
   })
 })

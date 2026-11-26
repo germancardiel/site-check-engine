@@ -26,6 +26,10 @@ export const from = vi.fn((table: string) => {
       calls.push({ method: 'maybeSingle', args: [] })
       return Promise.resolve(result())
     },
+    single: () => {
+      calls.push({ method: 'single', args: [] })
+      return Promise.resolve(result())
+    },
   }
   for (const method of ['select', 'insert', 'delete', 'eq']) {
     builder[method] = (...args: unknown[]) => {
@@ -38,6 +42,7 @@ export const from = vi.fn((table: string) => {
 
 export const USER = { id: 'user-1' }
 export const SITE_ID = '3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e'
+export const AUDIT_ID = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d'
 
 export function form(entries: Record<string, string>): FormData {
   const data = new FormData()

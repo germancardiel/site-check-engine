@@ -31,3 +31,25 @@ export function focusFirstError(root: FocusRoot | null, state: ErrorFocusState):
   target.focus()
   return true
 }
+
+/** A form state that can also carry a success message. */
+export type ResultFocusState = ErrorFocusState & { message?: string }
+
+/**
+ * After an action that changes the page (D-UX-10): an error focuses the first error inside `root`
+ * (as `focusFirstError`); a success focuses `successSelector` in `page` (e.g. the heading of what
+ * was created or of the list that changed). Returns whether something received focus.
+ */
+export function focusActionResult(
+  root: FocusRoot | null,
+  page: FocusRoot | null,
+  state: ResultFocusState,
+  successSelector: string,
+): boolean {
+  if (state.error || hasFieldErrors(state)) return focusFirstError(root, state)
+  if (!state.message || !page) return false
+  const target = page.querySelector(successSelector)
+  if (!target) return false
+  target.focus()
+  return true
+}

@@ -25,11 +25,15 @@ const sampleSite: SiteWithLatestAudit = {
     error: null,
     created_at: '2026-11-25T11:30:00.000Z',
   },
+  cooldown: null,
 }
+
+const noop = () => {}
+const rowProps = { now: NOW, remainingAudits: 15, deleteAction: noop }
 
 describe('SiteRow (CA8)', () => {
   it('renderiza el enlace en el título, el enlace explícito "Historial y evolución" a /sitios/[siteId] y diferencia el botón primario "Ver informe" del botón secundario "Auditar"', () => {
-    const html = renderToStaticMarkup(<SiteRow site={sampleSite} now={NOW} />)
+    const html = renderToStaticMarkup(<SiteRow site={sampleSite} {...rowProps} />)
     const $ = parseHtml(html)
 
     const siteLinks = $('a[href="/sitios/site-123"]')
@@ -59,13 +63,13 @@ describe('SiteRow (CA8)', () => {
         error: 'Timeout',
       },
     }
-    const failedHtml = renderToStaticMarkup(<SiteRow site={failedSite} now={NOW} />)
+    const failedHtml = renderToStaticMarkup(<SiteRow site={failedSite} {...rowProps} />)
     const $failed = parseHtml(failedHtml)
     const errBtn = $failed('a[href="/sitios/site-123/auditorias/audit-456"]')
     expect(errBtn.text()).toContain('Ver el error')
     expect(errBtn.attr('class')).toContain('bg-accent')
 
-    const emptyHtml = renderToStaticMarkup(<SiteRow site={{ ...sampleSite, latestAudit: null }} now={NOW} />)
+    const emptyHtml = renderToStaticMarkup(<SiteRow site={{ ...sampleSite, latestAudit: null }} {...rowProps} />)
     const $empty = parseHtml(emptyHtml)
     expect($empty('a[href="/sitios/site-123"]').last().text()).toContain('Historial y evolución')
     expect($empty('a[href*="/auditorias/"]')).toHaveLength(0)
@@ -82,7 +86,7 @@ describe('SiteList — buscador y paginación (CA9)', () => {
       name: `Sitio ${i + 1}`,
       url: `https://sitio-${i + 1}.es`,
     }))
-    const html = renderToStaticMarkup(<SiteList sites={manySites} now={NOW} />)
+    const html = renderToStaticMarkup(<SiteList sites={manySites} now={NOW} remainingAudits={15} />)
     const $ = parseHtml(html)
 
     expect($('label[for="site-search"]').text()).toContain('Buscar sitio')
@@ -103,7 +107,7 @@ describe('SiteList — buscador y paginación (CA9)', () => {
   })
 
   it('muestra el estado vacío cuando no hay sitios añadidos', () => {
-    const html = renderToStaticMarkup(<SiteList sites={[]} now={NOW} />)
+    const html = renderToStaticMarkup(<SiteList sites={[]} now={NOW} remainingAudits={15} />)
     expect(html).toContain('Aún no has añadido ningún sitio.')
   })
 })

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { connection } from 'next/server'
-import { Suspense } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { AuditHistory } from '@/components/audits/audit-history'
 import { DetailSkeleton } from '@/components/audits/detail-skeleton'
 import { ScoreChart } from '@/components/audits/score-chart'
@@ -10,6 +10,8 @@ import { BackLink } from '@/components/ui/back-link'
 import { buildHistory, HISTORY_LIMIT, type HistoryAudit } from '@/lib/audit/history'
 import { siteDisplayName } from '@/lib/format'
 import { SITE_NAME } from '@/lib/site'
+import { auditCooldown } from '@/lib/sites/audit-availability'
+import { loadRemainingAudits } from '@/lib/sites/audit-usage'
 import { createClient } from '@/lib/supabase/server'
 import { siteIdSchema } from '@/lib/validation/site'
 
@@ -24,7 +26,7 @@ const HISTORY_COLUMNS = 'id, status, score, seo_score, ai_score, error, created_
 
 type SitePageProps = { params: Promise<{ siteId: string }> }
 
-async function loadSite(siteId: string) {
+async function loadSite(siteId: string, now: Date) {
   const parsed = siteIdSchema.safeParse({ id: siteId })
   if (!parsed.success) notFound()
 
@@ -36,7 +38,7 @@ async function loadSite(siteId: string) {
 
   const { data: site, error } = await supabase
     .from('sites')
-    .select('id, url, name')
+    .select('id, url, name, last_audit_started_at')
     .eq('id', parsed.data.id)
     .eq('user_id', user.id)
     .maybeSingle()
@@ -47,28 +49,58 @@ async function loadSite(siteId: string) {
   if (!site) notFound()
 
   // One extra row so the oldest visible audit can still show its score change.
-  const { data: audits, error: auditsError } = await supabase
-    .from('audits')
-    .select(HISTORY_COLUMNS)
-    .eq('site_id', site.id)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(HISTORY_LIMIT + 1)
+  const [{ data: audits, error: auditsError }, remainingAudits] = await Promise.all([
+    supabase
+      .from('audits')
+      .select(HISTORY_COLUMNS)
+      .eq('site_id', site.id)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(HISTORY_LIMIT + 1),
+    loadRemainingAudits(supabase, user.id, now),
+  ])
   if (auditsError) {
     console.error('[SitePage] audits', auditsError)
     throw new Error('No se pudo cargar el historial.')
   }
 
-  return { site, audits: audits satisfies HistoryAudit[] }
+  return { site, audits: audits satisfies HistoryAudit[], remainingAudits }
+}
+
+/** Empty state of a new site: the first audit is one click away. */
+function NoAuditsYet({ auditForm }: { auditForm: ReactNode }) {
+  return (
+    <section aria-labelledby="no-audits-title" className="flex flex-col items-start gap-3 rounded-md border border-line p-6 sm:p-8">
+      <h2 id="no-audits-title" className="text-lg font-semibold">
+        Este sitio aún no tiene auditorías.
+      </h2>
+      <p className="max-w-prose text-ink-muted">
+        Lanza la primera: en unos segundos tendrás la nota de SEO, la de IA y la lista de lo que hay que arreglar.
+      </p>
+      {auditForm}
+    </section>
+  )
 }
 
 async function SiteContent({ params }: SitePageProps) {
   // Per-request render: the history shows times relative to now (D-QA-08).
   await connection()
+  const now = new Date()
   const { siteId } = await params
-  const { site, audits } = await loadSite(siteId)
+  const { site, audits, remainingAudits } = await loadSite(siteId, now)
   const displayName = siteDisplayName(site.name, site.url)
   const history = buildHistory(audits)
+  // What limits the audit button: the 1-minute wait of the site and the audits left today (D-UX-11).
+  const auditForm = (label: string) => (
+    <AuditSiteForm
+      siteId={site.id}
+      siteName={displayName}
+      label={label}
+      variant="primary"
+      cooldown={auditCooldown(site.last_audit_started_at, now)}
+      remaining={remainingAudits}
+    />
+  )
 
   return (
     <>
@@ -77,24 +109,11 @@ async function SiteContent({ params }: SitePageProps) {
           <h1 className="font-display text-4xl font-semibold tracking-display break-words sm:text-5xl">{displayName}</h1>
           <p className="font-mono text-sm break-all text-ink-muted">{site.url}</p>
         </div>
-        {history.length > 0 ? (
-          <AuditSiteForm siteId={site.id} siteName={displayName} label="Volver a auditar" variant="primary" />
-        ) : null}
+        {history.length > 0 ? auditForm('Volver a auditar') : null}
       </header>
 
       {history.length === 0 ? (
-        <section
-          aria-labelledby="no-audits-title"
-          className="flex flex-col items-start gap-3 rounded-md border border-line p-6 sm:p-8"
-        >
-          <h2 id="no-audits-title" className="text-lg font-semibold">
-            Este sitio aún no tiene auditorías.
-          </h2>
-          <p className="max-w-prose text-ink-muted">
-            Lanza la primera: en unos segundos tendrás la nota de SEO, la de IA y la lista de lo que hay que arreglar.
-          </p>
-          <AuditSiteForm siteId={site.id} siteName={displayName} label="Auditar ahora" variant="primary" />
-        </section>
+        <NoAuditsYet auditForm={auditForm('Auditar ahora')} />
       ) : (
         <>
           <section aria-labelledby="evolution-title" className="flex flex-col gap-4">
@@ -108,7 +127,7 @@ async function SiteContent({ params }: SitePageProps) {
               Historial{' '}
               <span className="font-mono text-sm font-normal text-ink-muted tabular-nums">{history.length}</span>
             </h2>
-            <AuditHistory entries={history} siteId={site.id} now={new Date()} />
+            <AuditHistory entries={history} siteId={site.id} now={now} />
           </section>
         </>
       )}

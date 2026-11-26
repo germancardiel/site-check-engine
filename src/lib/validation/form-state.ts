@@ -38,12 +38,23 @@ export function validationErrorState<F extends string>(
   return { error: error.issues[0]?.message ?? GENERIC_ERROR }
 }
 
-/** Reads the text values of `fields` (missing or non-text entries are left out). Never pass the password. */
+/**
+ * Longest value of each form field sent back to the client: URL 2048 (`SITE_URL_MAX_LENGTH`),
+ * site name 80 (`SITE_NAME_MAX_LENGTH`) and email 254 (RFC 5321). Any other field gets the default.
+ */
+export const FORM_VALUE_MAX_LENGTH: Readonly<Record<string, number>> = { url: 2048, name: 80, email: 254 }
+const DEFAULT_VALUE_MAX_LENGTH = 2048
+
+/**
+ * Reads the text values of `fields` (missing or non-text entries are left out), each one cut to the
+ * maximum length of its field, so a huge input is never echoed back whole. Never pass the password.
+ */
 export function readFormValues<F extends string>(formData: FormData, fields: readonly F[]): FormValues<F> {
   const values: FormValues<F> = {}
   for (const field of fields) {
     const value = formData.get(field)
-    if (typeof value === 'string') values[field] = value
+    if (typeof value !== 'string') continue
+    values[field] = value.slice(0, FORM_VALUE_MAX_LENGTH[field] ?? DEFAULT_VALUE_MAX_LENGTH)
   }
   return values
 }

@@ -6,6 +6,7 @@ import {
   from,
   getUser,
   queueResults,
+  redirect,
   revalidatePath,
   signOut,
   signedIn,
@@ -75,20 +76,38 @@ describe('createSite', () => {
         url: 'Solo se admiten los puertos por defecto (80 para http y 443 para https).',
         name: 'El nombre no puede superar 80 caracteres.',
       },
-      values: { url: 'ejemplo.com:8080', name },
+      // The echoed value is cut to the field's maximum length (T20).
+      values: { url: 'ejemplo.com:8080', name: name.slice(0, 80) },
     })
     expect(getUser).not.toHaveBeenCalled()
   })
 
-  it('inserta la URL normalizada con el user_id de la sesión y revalida /sitios', async () => {
+  it('inserta la URL normalizada con el user_id de la sesión, revalida /sitios y redirige al sitio nuevo (CA5)', async () => {
     signedIn()
-    queueResults('sites', { error: null })
-    const result = await createSite({}, form({ url: 'Ejemplo.com/#x', name: ' Mi web ' }))
-    expect(result).toEqual({ message: 'Sitio añadido.' })
+    queueResults('sites', { data: { id: SITE_ID }, error: null })
+    await expect(createSite({}, form({ url: 'Ejemplo.com/#x', name: ' Mi web ' }))).rejects.toThrow(
+      `NEXT_REDIRECT:/sitios/${SITE_ID}`,
+    )
+    expect(redirect).toHaveBeenCalledExactlyOnceWith(`/sitios/${SITE_ID}`)
     expect(callsOf('sites')).toEqual([
       { method: 'insert', args: [{ user_id: 'user-1', url: 'https://ejemplo.com', name: 'Mi web' }] },
+      { method: 'select', args: ['id'] },
+      { method: 'single', args: [] },
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/sitios')
+    expect(revalidatePath.mock.invocationCallOrder[0]).toBeLessThan(redirect.mock.invocationCallOrder[0])
+  })
+
+  it('si algo lanza (p. ej. Supabase sin red) devuelve un error genérico y conserva lo escrito (D-UX-12)', async () => {
+    const boom = new Error('fetch failed')
+    getUser.mockRejectedValue(boom)
+    const result = await createSite({}, form({ url: 'ejemplo.com', name: 'Mi web' }))
+    expect(result).toEqual({
+      error: 'No se pudo guardar el sitio. Inténtalo de nuevo.',
+      values: { url: 'ejemplo.com', name: 'Mi web' },
+    })
+    expect(console.error).toHaveBeenCalledWith('[createSite]', boom)
+    expect(redirect).not.toHaveBeenCalled()
   })
 
   it('devuelve "Ya tienes este sitio." si la URL está duplicada (23505)', async () => {
@@ -157,6 +176,14 @@ describe('deleteSite', () => {
       { method: 'eq', args: ['user_id', 'user-1'] },
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/sitios')
+  })
+
+  it('si algo lanza devuelve un error genérico en vez de romper la página (D-UX-12)', async () => {
+    const boom = new Error('fetch failed')
+    getUser.mockRejectedValue(boom)
+    const result = await deleteSite({}, form({ id: SITE_ID }))
+    expect(result).toEqual({ error: 'No se pudo borrar el sitio. Inténtalo de nuevo.' })
+    expect(console.error).toHaveBeenCalledWith('[deleteSite]', boom)
   })
 
   it('devuelve un error genérico y lo registra si Supabase falla', async () => {

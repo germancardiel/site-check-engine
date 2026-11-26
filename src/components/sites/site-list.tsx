@@ -1,10 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { unstable_rethrow } from 'next/navigation'
+import { useActionState, useState, type Ref } from 'react'
+import { deleteSite } from '@/app/(app)/sitios/actions'
 import { buttonClass } from '@/components/ui/button-styles'
+import { FormFeedback } from '@/components/ui/form-feedback'
 import { INPUT_CLASS } from '@/components/ui/text-field'
+import { useFocusActionResult } from '@/components/ui/use-focus-action-result'
+import { NETWORK_ERROR, withNetworkFallback } from '@/lib/action-safety'
+import { auditQuotaLabel } from '@/lib/sites/audit-availability'
 import { filterAndPaginateSites, SITES_PAGE_SIZE } from '@/lib/sites/filter'
+import type { SiteActionState } from '@/lib/validation/site'
 import { SiteRow, type SiteWithLatestAudit } from './site-row'
+
+const INITIAL_DELETE_STATE: SiteActionState = {}
+
+const safeDeleteSite = withNetworkFallback<SiteActionState>(deleteSite, () => ({ error: NETWORK_ERROR }), unstable_rethrow)
+
+/** Heading of the list (rendered by the page with `tabIndex={-1}`): the focus goes there after a delete. */
+export const SITE_LIST_TITLE_SELECTOR = '#site-list-title'
 
 const COLUMNS = 'lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_9.5rem_12rem] lg:gap-8'
 
@@ -103,11 +117,59 @@ function SiteSearchField({ value, onChange }: { value: string; onChange: (value:
   )
 }
 
-export function SiteList({ sites, now }: { sites: SiteWithLatestAudit[]; now: Date }) {
+type SiteTableProps = Pick<SiteListViewProps, 'sites' | 'now' | 'remainingAudits' | 'deleteAction'>
+
+function SiteTable({ sites, now, remainingAudits, deleteAction }: SiteTableProps) {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className={`hidden border-b border-line-strong pb-2 font-mono text-xs tracking-wider text-ink-muted uppercase lg:grid ${COLUMNS}`}
+      >
+        <span>Sitio</span>
+        <span>Última nota</span>
+        <span>Auditado</span>
+        <span>Acciones</span>
+      </div>
+      <ul>
+        {sites.map((site) => (
+          <SiteRow key={site.id} site={site} now={now} remainingAudits={remainingAudits} deleteAction={deleteAction} />
+        ))}
+      </ul>
+    </>
+  )
+}
+
+type SiteListViewProps = {
+  sites: SiteWithLatestAudit[]
+  now: Date
+  remainingAudits: number | null
+  deleteState: SiteActionState
+  deleteAction: (formData: FormData) => void
+  feedbackRef?: Ref<HTMLDivElement>
+}
+
+/**
+ * Searchable, paginated list of sites. The result of deleting a site is announced here, once
+ * ("Sitio borrado." with `role="status"`), because the deleted row disappears (D-UX-10).
+ */
+export function SiteListView({ sites, now, remainingAudits, deleteState, deleteAction, feedbackRef }: SiteListViewProps) {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
 
-  if (sites.length === 0) return <EmptySitesState />
+  const feedback = (
+    <div ref={feedbackRef}>
+      <FormFeedback error={deleteState.error} message={deleteState.message} />
+    </div>
+  )
+  if (sites.length === 0) {
+    return (
+      <div className="flex flex-col gap-5">
+        {feedback}
+        <EmptySitesState />
+      </div>
+    )
+  }
 
   const paged = filterAndPaginateSites(sites, query, page, SITES_PAGE_SIZE)
   const updateQuery = (next: string) => {
@@ -117,25 +179,16 @@ export function SiteList({ sites, now }: { sites: SiteWithLatestAudit[]; now: Da
 
   return (
     <div className="flex flex-col gap-5">
-      <SiteSearchField value={query} onChange={updateQuery} />
+      {feedback}
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <SiteSearchField value={query} onChange={updateQuery} />
+        {remainingAudits !== null ? <p className="text-sm text-ink-muted">{auditQuotaLabel(remainingAudits)}</p> : null}
+      </div>
       {paged.total === 0 ? (
         <NoMatchesState query={query} onClear={() => updateQuery('')} />
       ) : (
         <div className="flex flex-col gap-4">
-          <div
-            aria-hidden="true"
-            className={`hidden border-b border-line-strong pb-2 font-mono text-xs tracking-wider text-ink-muted uppercase lg:grid ${COLUMNS}`}
-          >
-            <span>Sitio</span>
-            <span>Última nota</span>
-            <span>Auditado</span>
-            <span>Acciones</span>
-          </div>
-          <ul>
-            {paged.items.map((site) => (
-              <SiteRow key={site.id} site={site} now={now} />
-            ))}
-          </ul>
+          <SiteTable sites={paged.items} now={now} remainingAudits={remainingAudits} deleteAction={deleteAction} />
           <PaginationBar
             page={paged.page}
             totalPages={paged.totalPages}
@@ -149,4 +202,12 @@ export function SiteList({ sites, now }: { sites: SiteWithLatestAudit[]; now: Da
       )}
     </div>
   )
+}
+
+type SiteListProps = { sites: SiteWithLatestAudit[]; now: Date; remainingAudits: number | null }
+
+export function SiteList(props: SiteListProps) {
+  const [deleteState, deleteAction] = useActionState(safeDeleteSite, INITIAL_DELETE_STATE)
+  const feedbackRef = useFocusActionResult<HTMLDivElement>(deleteState, SITE_LIST_TITLE_SELECTOR)
+  return <SiteListView {...props} deleteState={deleteState} deleteAction={deleteAction} feedbackRef={feedbackRef} />
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-import { FIELD_ERROR_SELECTOR, FORM_ERROR_SELECTOR, focusFirstError, type FocusRoot } from '@/lib/form-focus'
+import {
+  FIELD_ERROR_SELECTOR,
+  FORM_ERROR_SELECTOR,
+  focusActionResult,
+  focusFirstError,
+  type FocusRoot,
+} from '@/lib/form-focus'
 
 /** Fake form: `querySelector` returns the first element with that selector, whose `focus` is a spy. */
 function fakeRoot(elements: Record<string, string>) {
@@ -45,5 +51,30 @@ describe('focusFirstError', () => {
     expect(focusFirstError(null, { error: 'x' })).toBe(false)
     const { root } = fakeRoot({})
     expect(focusFirstError(root, { error: 'x' })).toBe(false)
+  })
+})
+
+describe('focusActionResult (T20, D-UX-10)', () => {
+  it('con éxito enfoca el destino de la página (p. ej. el título de la lista o del plan)', () => {
+    const form = fakeRoot({ [FORM_ERROR_SELECTOR]: 'error' })
+    const page = fakeRoot({ '#plan-title': 'plan' })
+    expect(focusActionResult(form.root, page.root, { message: 'Plan de acción generado.' }, '#plan-title')).toBe(true)
+    expect(page.focused).toEqual(['plan'])
+    expect(form.focused).toEqual([])
+  })
+
+  it('con error enfoca el error dentro del formulario, no el destino de éxito', () => {
+    const form = fakeRoot({ [FORM_ERROR_SELECTOR]: 'error' })
+    const page = fakeRoot({ '#plan-title': 'plan' })
+    expect(focusActionResult(form.root, page.root, { error: 'Falló' }, '#plan-title')).toBe(true)
+    expect(form.focused).toEqual(['error'])
+    expect(page.focused).toEqual([])
+  })
+
+  it('sin resultado, sin página o sin destino no enfoca nada', () => {
+    const page = fakeRoot({})
+    expect(focusActionResult(null, page.root, {}, '#x')).toBe(false)
+    expect(focusActionResult(null, null, { message: 'ok' }, '#x')).toBe(false)
+    expect(focusActionResult(null, page.root, { message: 'ok' }, '#x')).toBe(false)
   })
 })

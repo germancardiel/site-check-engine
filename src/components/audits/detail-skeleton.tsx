@@ -3,7 +3,7 @@ const BLOCK = 'animate-pulse rounded-md bg-line motion-reduce:animate-none'
 /** Placeholder with the shape of a site page (chart and history) or an audit (score band and checks). */
 export function DetailSkeleton({ label, variant }: { label: string; variant: 'site' | 'audit' }) {
   return (
-    <div role="status" aria-live="polite" className="flex flex-col gap-10">
+    <div role="status" className="flex flex-col gap-10">
       <span className="sr-only">{label}</span>
       <div aria-hidden="true" className="flex flex-col gap-3 border-b border-line pb-8">
         <div className={`${BLOCK} h-11 w-72 max-w-full`} />

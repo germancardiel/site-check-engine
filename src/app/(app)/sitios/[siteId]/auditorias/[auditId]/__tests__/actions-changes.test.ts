@@ -68,7 +68,7 @@ describe('generateChanges', () => {
     okAudit({ data: previous, error: null })
     quota(-1)
     const result = await generateChanges({}, form())
-    expect(result).toEqual({ error: QUOTA_MSG })
+    expect(result).toEqual({ error: QUOTA_MSG, quotaExceeded: true })
     expect(generateChangeSummary).not.toHaveBeenCalled()
   })
 

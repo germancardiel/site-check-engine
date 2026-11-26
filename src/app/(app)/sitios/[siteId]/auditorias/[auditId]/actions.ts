@@ -1,10 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { runSafely } from '@/lib/action-safety'
 import { diffAudits } from '@/lib/audit/diff'
 import { AI_DAILY_LIMIT, AI_MODEL } from '@/lib/ai/config'
 import { generateActionPlan, generateChangeSummary } from '@/lib/ai/generate'
 import type { PromptAudit } from '@/lib/ai/prompts'
+import { AI_QUOTA_EXHAUSTED_MESSAGE } from '@/lib/ai/reports'
 import { createClient } from '@/lib/supabase/server'
 import type { AiReportKind, Json, Tables } from '@/lib/supabase/types'
 import { aiReportInputSchema, type AiActionState, type AiReportInput } from '@/lib/validation/ai'
@@ -16,7 +18,6 @@ const SESSION_EXPIRED = 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
 const AUDIT_NOT_FOUND = 'No se encontró la auditoría.'
 const AUDIT_NOT_OK = 'Solo se puede usar la IA con auditorías completadas.'
 const NO_PREVIOUS = 'No hay una auditoría anterior con la que comparar.'
-const QUOTA_EXCEEDED = 'Has alcanzado el límite diario de generaciones con IA. Vuelve mañana.'
 const GENERATION_FAILED: Record<AiReportKind, string> = {
   plan: 'No se pudo generar el plan. Inténtalo de nuevo.',
   changes: 'No se pudo generar el resumen. Inténtalo de nuevo.',
@@ -115,7 +116,7 @@ async function runGeneration(
     console.error(`[${scope}] quota`, quotaError)
     return { error: GENERATION_FAILED[kind] }
   }
-  if (count === -1) return { error: QUOTA_EXCEEDED }
+  if (count === -1) return { error: AI_QUOTA_EXHAUSTED_MESSAGE, quotaExceeded: true }
 
   try {
     const content = await generate()
@@ -137,13 +138,16 @@ async function runGeneration(
 }
 
 export async function generatePlan(_: AiActionState, formData: FormData): Promise<AiActionState> {
-  const prepared = await prepare(formData, 'plan')
-  if (!prepared.ok) return { error: prepared.error }
-  const { ctx } = prepared
-  return runGeneration(ctx, 'plan', () => generateActionPlan(ctx.prompt))
+  // Any exception becomes a recoverable error: the audit stays visible (D-UX-12, D-AI-05).
+  return runSafely<AiActionState>('generatePlan', { error: GENERATION_FAILED.plan }, async () => {
+    const prepared = await prepare(formData, 'plan')
+    if (!prepared.ok) return { error: prepared.error }
+    const { ctx } = prepared
+    return runGeneration(ctx, 'plan', () => generateActionPlan(ctx.prompt))
+  })
 }
 
-export async function generateChanges(_: AiActionState, formData: FormData): Promise<AiActionState> {
+async function generateChangesUnsafe(formData: FormData): Promise<AiActionState> {
   const prepared = await prepare(formData, 'changes')
   if (!prepared.ok) return { error: prepared.error }
   const { ctx } = prepared
@@ -157,5 +161,11 @@ export async function generateChanges(_: AiActionState, formData: FormData): Pro
   )
   return runGeneration(ctx, 'changes', () =>
     generateChangeSummary({ diff, prev: previous, curr: ctx.prompt }),
+  )
+}
+
+export async function generateChanges(_: AiActionState, formData: FormData): Promise<AiActionState> {
+  return runSafely<AiActionState>('generateChanges', { error: GENERATION_FAILED.changes }, () =>
+    generateChangesUnsafe(formData),
   )
 }

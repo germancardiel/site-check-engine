@@ -1,14 +1,25 @@
 'use client'
 
+import { unstable_rethrow } from 'next/navigation'
 import { useActionState } from 'react'
 import { createSite } from '@/app/(app)/sitios/actions'
 import { FormFeedback } from '@/components/ui/form-feedback'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { TextField } from '@/components/ui/text-field'
 import { useFocusFirstError } from '@/components/ui/use-focus-first-error'
-import { SITE_NAME_MAX_LENGTH, type SiteActionState } from '@/lib/validation/site'
+import { NETWORK_ERROR, withNetworkFallback } from '@/lib/action-safety'
+import { readFormValues } from '@/lib/validation/form-state'
+import { SITE_FIELDS, SITE_NAME_MAX_LENGTH, type SiteActionState } from '@/lib/validation/site'
 
 const INITIAL_STATE: SiteActionState = {}
+
+// A failed call keeps what was typed and shows a recoverable error (D-UX-08, D-UX-12).
+// On success the action redirects to the new site, whose empty state offers "Auditar ahora".
+const safeCreateSite = withNetworkFallback<SiteActionState>(
+  createSite,
+  (formData) => ({ error: NETWORK_ERROR, values: readFormValues(formData, SITE_FIELDS) }),
+  unstable_rethrow,
+)
 
 type AddSiteFormViewProps = {
   state: SiteActionState
@@ -73,6 +84,6 @@ export function AddSiteFormView({ state, formAction }: AddSiteFormViewProps) {
 }
 
 export function AddSiteForm() {
-  const [state, formAction] = useActionState(createSite, INITIAL_STATE)
+  const [state, formAction] = useActionState(safeCreateSite, INITIAL_STATE)
   return <AddSiteFormView state={state} formAction={formAction} />
 }

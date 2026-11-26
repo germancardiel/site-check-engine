@@ -1,28 +1,11 @@
 import type { CheckResult } from '@/lib/audit/types'
-import { quotaLabel, type StoredReport } from '@/lib/ai/reports'
+import type { StoredReport } from '@/lib/ai/reports'
 import type { ActionPlan as ActionPlanData } from '@/lib/ai/schemas'
 import { formatAbsoluteDate } from '@/lib/format'
 import { ActionPlan } from './action-plan'
 import { AiNotice } from './ai-notice'
 import { DownloadPlanButton } from './download-plan-button'
 import { GenerateReportForm } from './generate-report-form'
-
-/** Daily quota sentence in the UI font, with only the figure in mono. */
-function QuotaNote({ label }: { label: string }) {
-  return (
-    <p className="text-sm text-ink-muted">
-      {label.split(/(\d+)/).map((part, index) =>
-        /^\d+$/.test(part) ? (
-          <span key={index} className="font-mono text-ink tabular-nums">
-            {part}
-          </span>
-        ) : (
-          part
-        ),
-      )}
-    </p>
-  )
-}
 
 type PlanSectionProps = {
   siteId: string
@@ -42,12 +25,10 @@ export function PlanSection(props: PlanSectionProps) {
   const { siteId, auditId, report, checks, siteUrl, score, remaining, loadError } = props
   return (
     <section aria-labelledby="plan-title" className="flex flex-col gap-5 border-t border-line pt-10">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <h2 id="plan-title" className="text-2xl font-semibold">
-          Plan de acción
-        </h2>
-        {remaining !== null ? <QuotaNote label={quotaLabel(remaining)} /> : null}
-      </div>
+      {/* tabIndex -1: the focus lands here after generating the plan (D-UX-10). */}
+      <h2 id="plan-title" tabIndex={-1} className="text-2xl font-semibold">
+        Plan de acción
+      </h2>
       {loadError ? <AiNotice>No se pudieron cargar los informes de IA. Puedes volver a generarlos.</AiNotice> : null}
       {report.status === 'invalid' ? (
         <AiNotice>No se pudo mostrar el plan guardado. Regenéralo para verlo.</AiNotice>
@@ -78,7 +59,13 @@ export function PlanSection(props: PlanSectionProps) {
           <ActionPlan plan={report.data} checks={checks} />
         </>
       ) : null}
-      <GenerateReportForm kind="plan" siteId={siteId} auditId={auditId} hasReport={report.status !== 'none'} />
+      <GenerateReportForm
+        kind="plan"
+        siteId={siteId}
+        auditId={auditId}
+        hasReport={report.status !== 'none'}
+        remaining={remaining}
+      />
     </section>
   )
 }

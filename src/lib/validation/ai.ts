@@ -14,4 +14,6 @@ export type AiReportInput = z.infer<typeof aiReportInputSchema>
 export type AiActionState = {
   error?: string
   message?: string
+  /** The error is the daily quota: retrying cannot help, so the form disables the button (D-UX-11). */
+  quotaExceeded?: boolean
 }
