@@ -48,6 +48,11 @@ Si falla cualquier puerta, el informe se limita a ese fallo con su salida y no s
 | D-SEC-07 | M | El HTML auditado nunca se renderiza con `dangerouslySetInnerHTML` | `grep -rn dangerouslySetInnerHTML src` → vacío |
 | D-SEC-08 | M | Los errores al usuario son genéricos; el detalle solo en `console.error` del servidor | Lectura de los `catch` |
 | D-SEC-09 | B | Los contadores y marcas de límites (cuotas, rate limits) no los puede modificar el usuario: `authenticated` no tiene `insert`/`update` sobre esas tablas o columnas, y solo se escriben mediante funciones `security definer` con `set search_path = ''` que usan `auth.uid()` y `now()` de Postgres. Toda función expuesta que devuelva cuota está acotada (no permite resetear el límite) | Lectura de grants, revokes y funciones en las migraciones |
+| D-SEC-10 | B | Límites de uso por usuario aplicados en la BD (no solo en la app): máximo 10 sitios y 15 auditorías por día (Europe/Madrid). Borrar y volver a crear un sitio no reinicia ningún límite. Los contadores cumplen D-SEC-09 | Lectura de la migración + tests de las actions (sitio 11 y auditoría 16 rechazados) |
+| D-SEC-11 | M | El fetcher y la URL de un sitio solo admiten los puertos por defecto (80 para `http`, 443 para `https`) | Tests de `site.test.ts` y `fetcher.test.ts` con `:22` y `:8080` |
+| D-SEC-12 | B | Todo `href` construido con datos de la BD o de la IA se valida como `http:`/`https:` (o ruta interna que empiece por `/` y no por `//`) antes de pintarse | Lectura de JSX + test con `javascript:` |
+| D-SEC-13 | M | Cabeceras en todas las respuestas: `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` y una `Content-Security-Policy` con al menos `default-src`, `frame-ancestors` y `object-src 'none'`. Las páginas con sesión llevan `Cache-Control: private, no-store` | `curl -I` contra `next start` en `/` y en `/sitios` |
+| D-SEC-14 | M | Toda redirección a una ruta recibida del usuario (`?next=`) se valida como ruta interna (empieza por `/`, no por `//` ni `/\\`) | Test del validador |
 
 Ejemplo D-SEC-04:
 ```ts
@@ -77,6 +82,11 @@ const url = formData.get('url') as string
 | D-UX-05 | M | Responsive desde 360 px sin scroll horizontal | Revisión de layouts (`flex-wrap`, `grid` responsive, sin anchos fijos > 360 px) |
 | D-UX-06 | m | Textos de interfaz en español, sin lorem ipsum | Revisión |
 | D-UX-07 | M | Las acciones lentas (auditar, IA) deshabilitan el botón y muestran progreso | Lectura de JSX (`useFormStatus`/`pending`) |
+| D-UX-08 | M | Si una acción devuelve error, el formulario conserva lo que escribió el usuario (nunca la contraseña) | Test de componente |
+| D-UX-09 | M | Los errores de un campo se muestran junto a él, con `aria-invalid="true"` y el id del error en `aria-describedby`; el foco va al primer campo con error | Test de componente |
+| D-UX-10 | M | Tras una acción que cambia la página (crear, borrar, generar, auditar), el foco se mueve a un destino lógico y el resultado se anuncia una sola vez (`role="status"` o `role="alert"`, no los dos ni `aria-live` duplicado) | Test de componente o paso manual |
+| D-UX-11 | M | Antes de pulsar se informa de lo que limita la acción (cuota restante, espera, coste de regenerar); si la acción no puede tener éxito, el botón está desactivado con el motivo visible | Test de componente |
+| D-UX-12 | M | Las acciones de servidor llamadas desde formularios nunca lanzan errores al cliente: devuelven `{ error }` (salvo `redirect()`/`notFound()`) | Lectura de las actions + test |
 
 ## 6. Datos y rendimiento (DATA)
 | ID | Sev | Requisito | Verificación |
