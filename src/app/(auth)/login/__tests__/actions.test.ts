@@ -31,7 +31,7 @@ describe('login', () => {
 
   it('no llama a Supabase si el email es inválido', async () => {
     await expect(login({}, form('no-es-email', 'secreto123'))).resolves.toEqual({
-      error: 'Introduce un email válido.',
+      fieldErrors: { email: 'Introduce un email válido.' },
       values: { email: 'no-es-email' },
     })
     expect(signInWithPassword).not.toHaveBeenCalled()
@@ -39,10 +39,19 @@ describe('login', () => {
 
   it('no llama a Supabase si falta la contraseña', async () => {
     await expect(login({}, form('ana@example.com', ''))).resolves.toEqual({
-      error: 'Introduce tu contraseña.',
+      fieldErrors: { password: 'Introduce tu contraseña.' },
       values: { email: 'ana@example.com' },
     })
     expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it('con email y contraseña vacíos devuelve el error de cada campo y nunca la contraseña', async () => {
+    const result = await login({}, form('', ''))
+    expect(result).toEqual({
+      fieldErrors: { email: 'Introduce un email válido.', password: 'Introduce tu contraseña.' },
+      values: { email: '' },
+    })
+    expect(JSON.stringify(result)).not.toContain('secreto')
   })
 
   it('devuelve un error genérico si Supabase falla', async () => {

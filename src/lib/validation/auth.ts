@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { FieldErrors, FormValues } from './form-state'
 
 const EMAIL_ERROR = 'Introduce un email válido.'
 export const PASSWORD_MIN_LENGTH = 8
@@ -76,12 +77,22 @@ export function readTextField(formData: FormData, name: string): string | undefi
   return typeof value === 'string' ? value : undefined
 }
 
+/** Text fields of the auth forms, in the order they appear. */
+export const AUTH_FIELDS = ['email', 'password'] as const
+export type AuthField = (typeof AUTH_FIELDS)[number]
+
+/** Fields sent back to refill an auth form after an error: never the password (D-UX-08). */
+export const AUTH_VALUE_FIELDS = ['email'] as const
+
 /** State returned by the auth server actions to their forms. */
 export type AuthFormState = {
+  /** General error (not tied to a field). */
   error?: string
   message?: string
+  /** Validation error of each field, shown next to it (D-UX-09). */
+  fieldErrors?: FieldErrors<AuthField>
   /** Non-sensitive values to refill the form after an error (never the password). */
-  values?: { email?: string }
+  values?: FormValues<(typeof AUTH_VALUE_FIELDS)[number]>
   /** Sign-up without session: address the confirmation email was sent to. */
   sentTo?: string
   /** Login rejected because the email is not confirmed yet: address to resend the email to. */

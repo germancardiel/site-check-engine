@@ -7,19 +7,23 @@ type FormFeedbackProps = {
 
 const BOX = 'flex items-start gap-2 rounded-md border px-3 py-2 text-sm text-ink'
 
-/** Announces a form error or success message to assistive technology. */
+/**
+ * Announces a form error (`role="alert"`) or a success message (`role="status"`) once: each role
+ * already implies its live region, so there is no extra `aria-live`. The error can receive focus
+ * (`tabIndex={-1}`) when it is not tied to a field (D-UX-09, D-UX-10).
+ */
 export function FormFeedback({ error, message }: FormFeedbackProps) {
   return (
     <>
-      <div role="alert" aria-live="assertive">
+      <div role="alert">
         {error ? (
-          <p className={`${BOX} border-fail`}>
+          <p tabIndex={-1} data-form-error="" className={`${BOX} border-fail`}>
             <StatusIcon status="fail" className="mt-0.5" />
             <span className="min-w-0 break-words">{error}</span>
           </p>
         ) : null}
       </div>
-      <div role="status" aria-live="polite">
+      <div role="status">
         {message ? (
           <p className={`${BOX} border-pass`}>
             <StatusIcon status="pass" className="mt-0.5" />

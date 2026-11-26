@@ -36,13 +36,13 @@ describe('updatePassword (CA3)', () => {
 
   it('valida la longitud igual que el registro', async () => {
     await expect(updatePassword({}, form('1234567'))).resolves.toEqual({
-      error: 'La contraseña debe tener al menos 8 caracteres.',
+      fieldErrors: { password: 'La contraseña debe tener al menos 8 caracteres.' },
     })
     await expect(updatePassword({}, form('a'.repeat(73)))).resolves.toEqual({
-      error: 'La contraseña no puede superar 72 caracteres.',
+      fieldErrors: { password: 'La contraseña no puede superar 72 caracteres.' },
     })
     await expect(updatePassword({}, form())).resolves.toEqual({
-      error: 'La contraseña debe tener al menos 8 caracteres.',
+      fieldErrors: { password: 'La contraseña debe tener al menos 8 caracteres.' },
     })
     expect(updateUser).not.toHaveBeenCalled()
   })

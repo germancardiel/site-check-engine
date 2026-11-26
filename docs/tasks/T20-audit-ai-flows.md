@@ -35,3 +35,7 @@ D-UX-01, D-UX-07, D-UX-10, D-UX-11, D-UX-12, D-AI-03, D-AI-05, D-QA-06, D-QA-08,
 ## Notas técnicas
 - `redirect()` dentro de una action lanza internamente: no lo captures en el `try/catch` (llámalo fuera, o vuelve a lanzar los errores de redirección).
 - La hora actual en Server Components solo tras `await connection()` dentro de `<Suspense>` (D-QA-08); la cuenta atrás se calcula en cliente a partir de una marca de tiempo.
+
+## Añadido por el Orquestador tras T19
+- Quitar los `aria-live` que acompañan a `role="status"` en `src/components/audits/detail-skeleton.tsx`, `src/components/sites/sites-skeleton.tsx` y `src/components/ai/generate-report-form.tsx` (D-UX-10). Test.
+- `readFormValues` (`src/lib/validation/form-state.ts`) recorta cada valor devuelto al cliente a la longitud máxima de su campo (URL 2048, nombre 80, email 254). Test.

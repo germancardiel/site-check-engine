@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { FieldErrors, FormValues } from './form-state'
 
 export const SITE_NAME_MAX_LENGTH = 80
 export const SITE_URL_MAX_LENGTH = 2048
@@ -69,6 +70,10 @@ export const siteIdSchema = z.object({
 
 export type SiteInput = z.infer<typeof siteSchema>
 
+/** Text fields of the add-site form, in the order they appear. */
+export const SITE_FIELDS = ['url', 'name'] as const
+export type SiteField = (typeof SITE_FIELDS)[number]
+
 /** Reads a text field from a form, returning `undefined` for missing or non-text values. */
 export function readTextField(formData: FormData, key: string): string | undefined {
   const value = formData.get(key)
@@ -77,6 +82,11 @@ export function readTextField(formData: FormData, key: string): string | undefin
 
 /** State returned by the site server actions to their forms. */
 export type SiteActionState = {
+  /** General error (not tied to a field). */
   error?: string
   message?: string
+  /** Validation error of each field of the add-site form (D-UX-09). */
+  fieldErrors?: FieldErrors<SiteField>
+  /** What the user typed, to refill the add-site form after an error (D-UX-08). */
+  values?: FormValues<SiteField>
 }

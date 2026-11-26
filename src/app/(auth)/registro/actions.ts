@@ -5,7 +5,9 @@ import { confirmUrl } from '@/lib/next-path'
 import { siteUrl } from '@/lib/site'
 import { createClient } from '@/lib/supabase/server'
 import {
+  AUTH_FIELDS,
   AUTH_MESSAGES,
+  AUTH_VALUE_FIELDS,
   emailOnlySchema,
   firstIssueMessage,
   readAuthForm,
@@ -13,12 +15,13 @@ import {
   registerSchema,
   type AuthFormState,
 } from '@/lib/validation/auth'
+import { readFormValues, validationErrorState } from '@/lib/validation/form-state'
 
 export async function register(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const fields = readAuthForm(formData)
-  const values = { email: typeof fields.email === 'string' ? fields.email : undefined }
+  const values = readFormValues(formData, AUTH_VALUE_FIELDS)
   const parsed = registerSchema.safeParse(fields)
-  if (!parsed.success) return { error: firstIssueMessage(parsed.error), values }
+  if (!parsed.success) return { ...validationErrorState(parsed.error, AUTH_FIELDS), values }
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({

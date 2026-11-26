@@ -7,7 +7,9 @@ import { AUDIT_DAILY_LIMIT, AUDIT_LIMIT_MESSAGE, SITE_LIMIT_MESSAGE } from '@/li
 import { createClient } from '@/lib/supabase/server'
 import type { TablesInsert } from '@/lib/supabase/types'
 import { firstIssueMessage } from '@/lib/validation/auth'
+import { readFormValues, validationErrorState } from '@/lib/validation/form-state'
 import {
+  SITE_FIELDS,
   readTextField,
   siteIdSchema,
   siteSchema,
@@ -65,23 +67,25 @@ export async function logout(): Promise<void> {
 }
 
 export async function createSite(_: SiteActionState, formData: FormData): Promise<SiteActionState> {
+  // What the user typed goes back with every error, so the form keeps it (D-UX-08).
+  const values = readFormValues(formData, SITE_FIELDS)
   const parsed = siteSchema.safeParse({
     url: readTextField(formData, 'url'),
     name: readTextField(formData, 'name'),
   })
-  if (!parsed.success) return { error: firstIssueMessage(parsed.error) }
+  if (!parsed.success) return { ...validationErrorState(parsed.error, SITE_FIELDS), values }
 
   const { supabase, user } = await getSessionClient()
-  if (!user) return { error: SESSION_EXPIRED }
+  if (!user) return { error: SESSION_EXPIRED, values }
 
   const { error } = await supabase
     .from('sites')
     .insert({ user_id: user.id, url: parsed.data.url, name: parsed.data.name })
   if (error) {
-    if (error.code === UNIQUE_VIOLATION) return { error: DUPLICATE_SITE }
-    if (isSiteLimitError(error)) return { error: SITE_LIMIT_MESSAGE }
+    if (error.code === UNIQUE_VIOLATION) return { error: DUPLICATE_SITE, values }
+    if (isSiteLimitError(error)) return { error: SITE_LIMIT_MESSAGE, values }
     console.error('[createSite]', error)
-    return { error: 'No se pudo guardar el sitio. Inténtalo de nuevo.' }
+    return { error: 'No se pudo guardar el sitio. Inténtalo de nuevo.', values }
   }
 
   revalidatePath('/sitios')

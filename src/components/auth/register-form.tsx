@@ -3,9 +3,11 @@
 import { useActionState } from 'react'
 import { register } from '@/app/(auth)/registro/actions'
 import { FormFeedback } from '@/components/ui/form-feedback'
+import { PasswordField } from '@/components/ui/password-field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { TextField } from '@/components/ui/text-field'
-import { PASSWORD_MIN_LENGTH, type AuthFormState } from '@/lib/validation/auth'
+import { useFocusFirstError } from '@/components/ui/use-focus-first-error'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, type AuthFormState } from '@/lib/validation/auth'
 import { ResendConfirmationForm } from './resend-confirmation-form'
 
 const INITIAL_STATE: AuthFormState = {}
@@ -32,12 +34,12 @@ function RegisterSent({ email }: { email: string }) {
   )
 }
 
-/** Sign-up form, replaced by the "check your inbox" message once the account is created. */
-export function RegisterFormView({ state, formAction }: RegisterFormViewProps) {
-  if (state.sentTo) return <RegisterSent email={state.sentTo} />
+/** Sign-up fields: keeps the email after an error (never the password) and focuses the first error. */
+function RegisterFields({ state, formAction }: RegisterFormViewProps) {
+  const formRef = useFocusFirstError(state)
 
   return (
-    <form action={formAction} className="flex flex-col gap-5" noValidate>
+    <form ref={formRef} action={formAction} className="flex flex-col gap-5" noValidate>
       <TextField
         key={`email-${state.values?.email ?? ''}`}
         id="email"
@@ -46,16 +48,18 @@ export function RegisterFormView({ state, formAction }: RegisterFormViewProps) {
         label="Email"
         autoComplete="email"
         defaultValue={state.values?.email}
+        error={state.fieldErrors?.email}
         required
       />
-      <TextField
+      <PasswordField
         id="password"
         name="password"
-        type="password"
         label="Contraseña"
-        hint={`Mínimo ${PASSWORD_MIN_LENGTH} caracteres.`}
+        hint={`Entre ${PASSWORD_MIN_LENGTH} y ${PASSWORD_MAX_LENGTH} caracteres.`}
         autoComplete="new-password"
         minLength={PASSWORD_MIN_LENGTH}
+        maxLength={PASSWORD_MAX_LENGTH}
+        error={state.fieldErrors?.password}
         required
       />
       <FormFeedback error={state.error} message={state.message} />
@@ -64,6 +68,12 @@ export function RegisterFormView({ state, formAction }: RegisterFormViewProps) {
       </SubmitButton>
     </form>
   )
+}
+
+/** Sign-up form, replaced by the "check your inbox" message once the account is created. */
+export function RegisterFormView({ state, formAction }: RegisterFormViewProps) {
+  if (state.sentTo) return <RegisterSent email={state.sentTo} />
+  return <RegisterFields state={state} formAction={formAction} />
 }
 
 export function RegisterForm() {

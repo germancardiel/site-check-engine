@@ -29,12 +29,12 @@ describe('requestPasswordReset (CA1)', () => {
 
   it('valida el email con zod y no llama a Supabase si es inválido, conservando lo escrito', async () => {
     await expect(requestPasswordReset({}, form('ana@'))).resolves.toEqual({
-      error: 'Introduce un email válido.',
+      fieldErrors: { email: 'Introduce un email válido.' },
       values: { email: 'ana@' },
     })
     await expect(requestPasswordReset({}, form())).resolves.toEqual({
-      error: 'Introduce un email válido.',
-      values: { email: undefined },
+      fieldErrors: { email: 'Introduce un email válido.' },
+      values: {},
     })
     expect(resetPasswordForEmail).not.toHaveBeenCalled()
   })

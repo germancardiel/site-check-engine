@@ -4,20 +4,22 @@ import { redirect } from 'next/navigation'
 import { safeNextPath } from '@/lib/next-path'
 import { createClient } from '@/lib/supabase/server'
 import {
+  AUTH_FIELDS,
   AUTH_MESSAGES,
-  firstIssueMessage,
+  AUTH_VALUE_FIELDS,
   loginSchema,
   nextFieldSchema,
   readAuthForm,
   readTextField,
   type AuthFormState,
 } from '@/lib/validation/auth'
+import { readFormValues, validationErrorState } from '@/lib/validation/form-state'
 
 export async function login(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const fields = readAuthForm(formData)
-  const values = { email: typeof fields.email === 'string' ? fields.email : undefined }
+  const values = readFormValues(formData, AUTH_VALUE_FIELDS)
   const parsed = loginSchema.safeParse(fields)
-  if (!parsed.success) return { error: firstIssueMessage(parsed.error), values }
+  if (!parsed.success) return { ...validationErrorState(parsed.error, AUTH_FIELDS), values }
   const nextField = nextFieldSchema.safeParse(readTextField(formData, 'next'))
   // D-SEC-14: only internal paths; anything else goes to /sitios.
   const next = safeNextPath(nextField.success ? nextField.data : undefined)

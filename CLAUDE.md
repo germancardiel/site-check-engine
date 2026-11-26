@@ -94,7 +94,7 @@ Archivos esperados, decisiones ya tomadas.
 | T16 | Límites de uso y endurecimiento de datos (auditoría 2026-11-26) | hecho (ronda 1) |
 | T17 | Cabeceras de seguridad y caché | hecho (ronda 1) |
 | T18 | Cuenta: recuperar contraseña y confirmar email | hecho (ronda 2) |
-| T19 | Formularios accesibles | pendiente |
+| T19 | Formularios accesibles | hecho (ronda 1) |
 | T20 | Flujos de auditoría e IA | pendiente |
 | T21 | Pulido de textos y accesibilidad | pendiente |
 

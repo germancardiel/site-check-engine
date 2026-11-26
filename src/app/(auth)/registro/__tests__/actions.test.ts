@@ -36,7 +36,7 @@ describe('register', () => {
 
   it('no llama a Supabase si la contraseña es corta', async () => {
     await expect(register({}, form('ana@example.com', '1234567'))).resolves.toEqual({
-      error: 'La contraseña debe tener al menos 8 caracteres.',
+      fieldErrors: { password: 'La contraseña debe tener al menos 8 caracteres.' },
       values: { email: 'ana@example.com' },
     })
     expect(signUp).not.toHaveBeenCalled()
@@ -44,9 +44,22 @@ describe('register', () => {
 
   it('no llama a Supabase si el email es inválido', async () => {
     await expect(register({}, form('ana', '12345678'))).resolves.toEqual({
-      error: 'Introduce un email válido.',
+      fieldErrors: { email: 'Introduce un email válido.' },
       values: { email: 'ana' },
     })
+    expect(signUp).not.toHaveBeenCalled()
+  })
+
+  it('con email inválido y contraseña corta devuelve los dos errores, cada uno en su campo (CA3)', async () => {
+    const result = await register({}, form('ana', '1234567'))
+    expect(result).toEqual({
+      fieldErrors: {
+        email: 'Introduce un email válido.',
+        password: 'La contraseña debe tener al menos 8 caracteres.',
+      },
+      values: { email: 'ana' },
+    })
+    expect(JSON.stringify(result)).not.toContain('1234567')
     expect(signUp).not.toHaveBeenCalled()
   })
 

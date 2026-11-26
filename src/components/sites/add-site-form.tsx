@@ -5,16 +5,26 @@ import { createSite } from '@/app/(app)/sitios/actions'
 import { FormFeedback } from '@/components/ui/form-feedback'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { TextField } from '@/components/ui/text-field'
+import { useFocusFirstError } from '@/components/ui/use-focus-first-error'
 import { SITE_NAME_MAX_LENGTH, type SiteActionState } from '@/lib/validation/site'
 
 const INITIAL_STATE: SiteActionState = {}
 
-/** Inline form to add a site: URL, optional name and "Añadir" on one line (stacked on mobile). */
-export function AddSiteForm() {
-  const [state, formAction] = useActionState(createSite, INITIAL_STATE)
+type AddSiteFormViewProps = {
+  state: SiteActionState
+  formAction: (formData: FormData) => void
+}
+
+/**
+ * Inline form to add a site: URL, optional name and "Añadir" on one line (stacked on mobile).
+ * After an error it keeps what was typed and focuses the first error.
+ */
+export function AddSiteFormView({ state, formAction }: AddSiteFormViewProps) {
+  const formRef = useFocusFirstError(state)
 
   return (
     <form
+      ref={formRef}
       action={formAction}
       noValidate
       aria-labelledby="add-site-title"
@@ -23,8 +33,9 @@ export function AddSiteForm() {
       <h2 id="add-site-title" className="text-base font-semibold">
         Añadir un sitio
       </h2>
-      <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto]">
+      <div className="grid items-start gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto]">
         <TextField
+          key={`url-${state.values?.url ?? ''}`}
           id="site-url"
           name="url"
           type="text"
@@ -33,17 +44,23 @@ export function AddSiteForm() {
           placeholder="ejemplo.com"
           aria-describedby="site-url-hint"
           autoComplete="url"
+          defaultValue={state.values?.url}
+          error={state.fieldErrors?.url}
           required
         />
         <TextField
+          key={`name-${state.values?.name ?? ''}`}
           id="site-name"
           name="name"
           type="text"
           label="Nombre (opcional)"
           maxLength={SITE_NAME_MAX_LENGTH}
           autoComplete="off"
+          defaultValue={state.values?.name}
+          error={state.fieldErrors?.name}
         />
-        <SubmitButton pendingLabel="Añadiendo…" className="w-full sm:w-auto">
+        {/* Label height (20px) + gap (6px): keeps the button level with the inputs on wide screens. */}
+        <SubmitButton pendingLabel="Añadiendo…" className="w-full sm:mt-6.5 sm:w-auto">
           Añadir
         </SubmitButton>
       </div>
@@ -53,4 +70,9 @@ export function AddSiteForm() {
       <FormFeedback error={state.error} message={state.message} />
     </form>
   )
+}
+
+export function AddSiteForm() {
+  const [state, formAction] = useActionState(createSite, INITIAL_STATE)
+  return <AddSiteFormView state={state} formAction={formAction} />
 }

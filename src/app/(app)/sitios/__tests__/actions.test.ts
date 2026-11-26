@@ -52,7 +52,10 @@ describe('logout', () => {
 describe('createSite', () => {
   it('no llama a Supabase si la URL es inválida', async () => {
     const result = await createSite({}, form({ url: 'ftp://ejemplo.com' }))
-    expect(result).toEqual({ error: 'Solo se admiten direcciones http:// o https://.' })
+    expect(result).toEqual({
+      fieldErrors: { url: 'Solo se admiten direcciones http:// o https://.' },
+      values: { url: 'ftp://ejemplo.com' },
+    })
     expect(getUser).not.toHaveBeenCalled()
     expect(from).not.toHaveBeenCalled()
   })
@@ -60,8 +63,21 @@ describe('createSite', () => {
   it('no inserta si no hay sesión', async () => {
     signedOut()
     const result = await createSite({}, form({ url: 'ejemplo.com' }))
-    expect(result).toEqual({ error: 'Tu sesión ha caducado. Vuelve a iniciar sesión.' })
+    expect(result).toEqual({ error: 'Tu sesión ha caducado. Vuelve a iniciar sesión.', values: { url: 'ejemplo.com' } })
     expect(from).not.toHaveBeenCalled()
+  })
+
+  it('con URL y nombre inválidos devuelve el error de cada campo y conserva lo escrito (CA2)', async () => {
+    const name = 'x'.repeat(81)
+    const result = await createSite({}, form({ url: 'ejemplo.com:8080', name }))
+    expect(result).toEqual({
+      fieldErrors: {
+        url: 'Solo se admiten los puertos por defecto (80 para http y 443 para https).',
+        name: 'El nombre no puede superar 80 caracteres.',
+      },
+      values: { url: 'ejemplo.com:8080', name },
+    })
+    expect(getUser).not.toHaveBeenCalled()
   })
 
   it('inserta la URL normalizada con el user_id de la sesión y revalida /sitios', async () => {
@@ -79,7 +95,7 @@ describe('createSite', () => {
     signedIn()
     queueResults('sites', { error: { code: '23505', message: 'duplicate key value' } })
     const result = await createSite({}, form({ url: 'ejemplo.com' }))
-    expect(result).toEqual({ error: 'Ya tienes este sitio.' })
+    expect(result).toEqual({ error: 'Ya tienes este sitio.', values: { url: 'ejemplo.com' } })
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
@@ -87,7 +103,10 @@ describe('createSite', () => {
     signedIn()
     queueResults('sites', { error: { code: 'P0001', message: 'site_limit_reached' } })
     const result = await createSite({}, form({ url: 'ejemplo.com' }))
-    expect(result).toEqual({ error: 'Has llegado al máximo de 10 sitios. Borra uno para añadir otro.' })
+    expect(result).toEqual({
+      error: 'Has llegado al máximo de 10 sitios. Borra uno para añadir otro.',
+      values: { url: 'ejemplo.com' },
+    })
     expect(console.error).not.toHaveBeenCalled()
     expect(revalidatePath).not.toHaveBeenCalled()
   })
@@ -97,7 +116,7 @@ describe('createSite', () => {
     const dbError = { code: 'P0001', message: 'otra cosa' }
     queueResults('sites', { error: dbError })
     const result = await createSite({}, form({ url: 'ejemplo.com' }))
-    expect(result).toEqual({ error: 'No se pudo guardar el sitio. Inténtalo de nuevo.' })
+    expect(result).toEqual({ error: 'No se pudo guardar el sitio. Inténtalo de nuevo.', values: { url: 'ejemplo.com' } })
     expect(console.error).toHaveBeenCalledWith('[createSite]', dbError)
   })
 
@@ -106,7 +125,7 @@ describe('createSite', () => {
     const dbError = { code: '42501', message: 'permission denied for table sites' }
     queueResults('sites', { error: dbError })
     const result = await createSite({}, form({ url: 'ejemplo.com' }))
-    expect(result).toEqual({ error: 'No se pudo guardar el sitio. Inténtalo de nuevo.' })
+    expect(result).toEqual({ error: 'No se pudo guardar el sitio. Inténtalo de nuevo.', values: { url: 'ejemplo.com' } })
     expect(console.error).toHaveBeenCalledWith('[createSite]', dbError)
     expect(revalidatePath).not.toHaveBeenCalled()
   })

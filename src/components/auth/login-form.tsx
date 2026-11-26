@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { useActionState } from 'react'
 import { login } from '@/app/(auth)/login/actions'
 import { FormFeedback } from '@/components/ui/form-feedback'
+import { PasswordField } from '@/components/ui/password-field'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { TextField } from '@/components/ui/text-field'
+import { useFocusFirstError } from '@/components/ui/use-focus-first-error'
 import type { AuthFormState } from '@/lib/validation/auth'
 import { ResendConfirmationForm } from './resend-confirmation-form'
 
@@ -26,10 +28,13 @@ type LoginFormViewProps = LoginFormProps & {
   formAction: (formData: FormData) => void
 }
 
+/** Sign-in form: keeps the email after an error (never the password) and focuses the first error. */
 export function LoginFormView({ state, formAction, next, notice }: LoginFormViewProps) {
+  const formRef = useFocusFirstError(state)
+
   return (
     <div className="flex flex-col gap-5">
-      <form action={formAction} className="flex flex-col gap-5" noValidate>
+      <form ref={formRef} action={formAction} className="flex flex-col gap-5" noValidate>
         {next ? <input type="hidden" name="next" value={next} /> : null}
         <TextField
           key={`email-${state.values?.email ?? ''}`}
@@ -39,15 +44,16 @@ export function LoginFormView({ state, formAction, next, notice }: LoginFormView
           label="Email"
           autoComplete="email"
           defaultValue={state.values?.email}
+          error={state.fieldErrors?.email}
           required
         />
         <div className="flex flex-col gap-2">
-          <TextField
+          <PasswordField
             id="password"
             name="password"
-            type="password"
             label="Contraseña"
             autoComplete="current-password"
+            error={state.fieldErrors?.password}
             required
           />
           <Link href="/recuperar" className={`self-start text-sm ${AUTH_LINK_CLASS}`}>

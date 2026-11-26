@@ -3,16 +3,17 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import {
+  AUTH_FIELDS,
   AUTH_MESSAGES,
-  firstIssueMessage,
   newPasswordSchema,
   readTextField,
   type AuthFormState,
 } from '@/lib/validation/auth'
+import { validationErrorState } from '@/lib/validation/form-state'
 
 export async function updatePassword(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const parsed = newPasswordSchema.safeParse({ password: readTextField(formData, 'password') })
-  if (!parsed.success) return { error: firstIssueMessage(parsed.error) }
+  if (!parsed.success) return validationErrorState(parsed.error, AUTH_FIELDS)
 
   const supabase = await createClient()
   const {
